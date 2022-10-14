@@ -96,7 +96,7 @@ async function process_html(html = "") {
             const hash_string = await hash_blob(blob);
 
             post["hash_filename"] = hash_string + file_extension;
-            zip.file(hash_string + file_extension, blob);
+            zip.file(hash_string + file_extension, await encrypt_blob(blob));
 
             return Promise.resolve(1);
         })

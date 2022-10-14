@@ -1,17 +1,15 @@
 function hash_blob(blob) {
-    return new Promise((resolve, reject) => {
-        const fileReader = new FileReader();
+    return new Promise(async (resolve, reject) => {
+        const asArrayBuffer = await blob.arrayBuffer();
 
-        fileReader.addEventListener("load", () => {
-            crypto.subtle.digest("SHA-1", fileReader.result).then((buffer) => {
+        crypto.subtle
+            .digest("SHA-1", asArrayBuffer)
+            .then((buffer) => {
                 resolve(array_buffer_to_hex_string(buffer));
+            })
+            .catch(() => {
+                reject();
             });
-        });
-        fileReader.addEventListener("error", () => {
-            reject(fileReader.error);
-        });
-
-        fileReader.readAsArrayBuffer(blob);
     });
 }
 
@@ -59,10 +57,10 @@ function set_key_to_use(input_id, button_id) {
         console.log("Encryption disabled");
     } else {
         const enc = new TextEncoder();
-        window.crypto.subtle
+        crypto.subtle
             .importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"])
             .then((keyFromPassphrase) => {
-                window.crypto.subtle
+                crypto.subtle
                     .deriveKey(
                         {
                             name: "PBKDF2",
@@ -95,7 +93,7 @@ async function encrypt_text(text) {
     let enc = new TextEncoder();
     let message = enc.encode(text);
 
-    ciphertext = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, used_key, message);
+    ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, used_key, message);
 
     return array_buffer_to_hex_string(ciphertext);
 }
@@ -107,7 +105,7 @@ async function decrypt_text(text) {
 
     let decrypted = "";
     try {
-        decrypted = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, used_key, hex_string_to_typed_array(text));
+        decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, used_key, hex_string_to_typed_array(text));
     } catch (error) {
         console.error("error while decrypting text. Probably used the wrong key");
         return "Decryption Error";
@@ -115,4 +113,55 @@ async function decrypt_text(text) {
 
     let dec = new TextDecoder();
     return dec.decode(decrypted);
+}
+
+function encrypt_blob(blob) {
+    if (!encryption_on()) {
+        return blob;
+    }
+
+    return new Promise(async (resolve, reject) => {
+        const asArrayBuffer = await blob.arrayBuffer();
+
+        window.crypto.subtle
+            .encrypt({ name: "AES-GCM", iv: iv }, used_key, asArrayBuffer)
+            .then((buffer) => {
+                let out_blob = new Blob([buffer], {
+                    type: blob.type,
+                });
+
+                resolve(out_blob);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+}
+
+function decrypt_blob(blob) {
+    if (!encryption_on()) {
+        return blob;
+    }
+
+    return new Promise(async (resolve, reject) => {
+        const asArrayBuffer = await blob.arrayBuffer();
+
+        try {
+            crypto.subtle
+                .decrypt({ name: "AES-GCM", iv: iv }, used_key, asArrayBuffer)
+                .then((buffer) => {
+                    let out_blob = new Blob([buffer], {
+                        type: blob.type,
+                    });
+
+                    resolve(out_blob);
+                })
+                .catch(() => {
+                    console.error("error while decrypting blob. Probably used the wrong key");
+                    reject();
+                });
+        } catch (error) {
+            console.error("error while decrypting blob. Probably used the wrong key");
+        }
+    });
 }

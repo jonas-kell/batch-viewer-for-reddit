@@ -42,7 +42,6 @@ $(document).ready(() => {
         let number = parseInt(document.getElementById("current_number_top").value);
 
         select_post(number - 1);
-        console.log("asd");
     });
 
     $(".view_next").on("click", () => {

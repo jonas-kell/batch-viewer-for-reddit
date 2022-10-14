@@ -13,6 +13,9 @@
         />
         <meta name="theme-color" content="red" media="(prefers-color-scheme: dark)" />
 
+        <!-- js -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
         <!-- links -->
         <link rel="stylesheet" href="styles.css" />
         <link rel="manifest" href="app.webmanifest" />
@@ -27,15 +30,37 @@
     <body>
         <a href="./index.html"><h1>Batch Viewer for Reddit</h1></a>
 
+        This is sadly not as automatic, as I had hoped it to be, as the CORS policy stops us from getting the html automatically.
+        Using external tools to achieve this also isn't viable, as there is bot protection and using the api requires
+        authentication. I still finished it as a proof of concept, as the goal is not to download whole subnreddits, but just as a
+        funny educational introduction to PWA developing for me.
+
+        <br />
+        <br />
+
+        It is therefore necessary to copy the generated link into a browser, and put the html of the response back into to next
+        step. As this is very interactive, it should not violate any terms of service against scraping automatically. The site
+        whose html is copied should be trustworthy, because there is no protection against scripts being executed!!!
+
         <h2>Archive page</h2>
         <div>
             Subreddit to scrape<br />
             <input type="text" id="subreddit_name" placeholder="mathmemes" value="mathmemes" /><br />
-            Number of posts<br />
-            <input type="number" id="number_of_posts" value="100" min="1" /><br />
             Post to start with (shortlink of "old.reddit.com" format, e.g. "y3215w" in the case of https://redd.it/y3215w)<br />
             <input type="text" id="start_with_post" />
-            <button id="scrape_action">SCRAPE</button>
+            <button id="generate_url_action">Generate URL</button>
+
+            <br />
+            <br />
+            URL to get html from<br />
+            <input type="text" id="url_output" disabled value="" style="width: 60%" />
+            <button id="copy_to_clipboard">Copy to clipboard</button>
+
+            <br />
+            <br />
+            HTML input<br />
+            <textarea type="text" id="html_input" placeholder="HTML here"></textarea>
+            <button id="process_html">Process HTML</button>
         </div>
     </body>
 

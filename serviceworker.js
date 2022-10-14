@@ -21,6 +21,7 @@ urlsToCache = [
     "assets/icons/icon-192x192.png",
     "assets/icons/icon-384x384.png",
     "assets/icons/icon-512x512.png",
+    "https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js",
 ];
 
 // This code executes in its own worker or thread

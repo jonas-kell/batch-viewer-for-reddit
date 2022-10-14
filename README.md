@@ -8,7 +8,7 @@ Many convenience features could be added, but at th moment this is just for my f
 
 ### Local testing
 
-Run in the PWA Folder:
+Run in the base of the project:
 
 ```cmd
 python3 -m http.server 8080 --bind 127.0.0.1

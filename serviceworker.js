@@ -7,6 +7,8 @@ urlsToCache = [
     "favicon.ico",
     "archive.html",
     "archive.js",
+    "merge.html",
+    "merge.js",
     "manage.html",
     "manage.js",
     "hash.js",

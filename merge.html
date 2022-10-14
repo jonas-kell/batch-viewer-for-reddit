@@ -15,6 +15,18 @@
 
         <!-- js -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+            integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+            integrity="sha512-Qlv6VSKh1gDKGoJbnyA5RMXYcvnpIqhO++MhIM2fStMcGT9i2T//tSwYFlcyoRRDcDZ+TYHpH8azBBCyhpSeqw=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
 
         <!-- links -->
         <link rel="stylesheet" href="styles.css" />
@@ -28,18 +40,19 @@
         <meta name="msapplication-TileColor" content="#da532c" />
     </head>
     <body>
-        <h1>Batch Viewer for Reddit</h1>
+        <a href="./index.html"><h1>Batch Viewer for Reddit</h1></a>
 
-        <span> Archive: <a href="archive.html">Archive a new set of posts</a></span>
+        <h2>Merge Collections</h2>
+        <button id="open_zip">Open Zip</button><br />
+        Make sure to only merge collections with the same encryption key to have no limited viewing experience.
         <br />
         <br />
         <br />
-        <span> Merge: <a href="merge.html">Merge multiple collections</a></span>
+
+        <div id="selected_zip_display"></div>
         <br />
-        <br />
-        <br />
-        <span> View: <a href="manage.html">View and Manage stored collections</a></span>
+        <button id="merge_action">MERGE</button>
     </body>
 
-    <script src="app.js"></script>
+    <script src="merge.js"></script>
 </html>

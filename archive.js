@@ -115,7 +115,7 @@ async function process_html(html = "") {
 
     zip.generateAsync({ type: "blob" }).then(function (content) {
         // see FileSaver.js
-        saveAs(content, "archive_" + String(Date.now()) + ".zip");
+        saveAs(content, "archive_" + String(Date.now()) + (encryption_on() ? "_encrypted" : "") + ".zip");
     });
 }
 

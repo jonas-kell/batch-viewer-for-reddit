@@ -29,23 +29,26 @@ $(document).ready(() => {
             main_zip_file = zip;
 
             // set max number display
-            document.getElementById("max_number").innerHTML = control_json.length - 1;
+            $(".max_number").each((index, element) => {
+                $(element).html(control_json.length - 1);
+            });
 
             // get image files from zip and append to display
             select_post(0);
         });
+    });
 
-        document.getElementById("view_prev").addEventListener("click", () => {
-            let number = parseInt(document.getElementById("current_number").value);
+    $(".view_prev").on("click", () => {
+        let number = parseInt(document.getElementById("current_number_top").value);
 
-            select_post(number - 1);
-        });
+        select_post(number - 1);
+        console.log("asd");
+    });
 
-        document.getElementById("view_next").addEventListener("click", () => {
-            let number = parseInt(document.getElementById("current_number").value);
+    $(".view_next").on("click", () => {
+        let number = parseInt(document.getElementById("current_number_top").value);
 
-            select_post(number + 1);
-        });
+        select_post(number + 1);
     });
 });
 
@@ -56,7 +59,9 @@ async function select_post(number) {
         number = 0;
     }
 
-    document.getElementById("current_number").value = number;
+    $(".current_number").each((index, element) => {
+        $(element).val(number);
+    });
 
     await display_post(control_json[number]);
 }

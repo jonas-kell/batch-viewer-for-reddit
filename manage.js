@@ -1,9 +1,5 @@
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("serviceworker.js");
-}
-
 docReady(() => {
-    console.log("Main js finished executing");
+    console.log("Manage js finished executing");
 });
 
 /** jquery replacement */

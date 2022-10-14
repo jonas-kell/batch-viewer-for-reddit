@@ -21,6 +21,10 @@ $(document).ready(() => {
             process_html(html);
         }
     });
+
+    document.getElementById("update_encryption_key").addEventListener("click", () => {
+        set_key_to_use("encryption_key", "update_encryption_key");
+    });
 });
 
 function scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
@@ -98,6 +102,15 @@ async function process_html(html = "") {
         })
     );
 
+    // encrypt lookup json
+    if (encryption_on()) {
+        for (let i = 0; i < output_array.length; i++) {
+            output_array[i].id = await encrypt_text(output_array[i].id);
+            output_array[i].direct_link = await encrypt_text(output_array[i].direct_link);
+            output_array[i].title = await encrypt_text(output_array[i].title);
+            output_array[i].image_link = await encrypt_text(output_array[i].image_link);
+        }
+    }
     zip.file("contents.json", JSON.stringify(output_array));
 
     zip.generateAsync({ type: "blob" }).then(function (content) {

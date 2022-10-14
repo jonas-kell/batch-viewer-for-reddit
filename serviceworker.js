@@ -1,6 +1,5 @@
 urlsToCache = [
     "",
-    "/",
     "app.js",
     "styles.css",
     "app.webmanifest",

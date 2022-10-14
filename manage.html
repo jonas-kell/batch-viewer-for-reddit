@@ -46,7 +46,17 @@
         <input type="text" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
         <button id="update_decryption_key">Update</button>
 
-        <div id="view_target" style="width: 100%; text-align: center"></div>
+        <br />
+        <br />
+        <div id="view_target" style="width: 100%; text-align: center; min-height: 2cm; border: 2px solid black"></div>
+        <br />
+        <div style="width: 100%; text-align: center">
+            <div style="width: 60%; margin: auto">
+                <input type="number" value="0" style="width: 9%" id="current_number" /> / <span id="max_number">0</span>
+                <span style="float: left; border: 1px solid black; cursor: pointer" id="view_prev">prev</span>
+                <span style="float: right; border: 1px solid black; cursor: pointer" id="view_next">next</span>
+            </div>
+        </div>
     </body>
 
     <script src="manage.js"></script>

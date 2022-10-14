@@ -1,3 +1,6 @@
+let control_json = [];
+let main_zip_file = null;
+
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", () => {
         set_key_to_use("decryption_key", "update_decryption_key");
@@ -22,18 +25,48 @@ $(document).ready(() => {
                 }
             }
 
+            control_json = json;
+            main_zip_file = zip;
+
+            // set max number display
+            document.getElementById("max_number").innerHTML = control_json.length - 1;
+
             // get image files from zip and append to display
-            display_post(json[0], zip);
+            select_post(0);
+        });
+
+        document.getElementById("view_prev").addEventListener("click", () => {
+            let number = parseInt(document.getElementById("current_number").value);
+
+            select_post(number - 1);
+        });
+
+        document.getElementById("view_next").addEventListener("click", () => {
+            let number = parseInt(document.getElementById("current_number").value);
+
+            select_post(number + 1);
         });
     });
 });
 
-async function display_post(json_post, zip) {
+async function select_post(number) {
+    if (number >= 0 && number < control_json.length) {
+        // ok region
+    } else {
+        number = 0;
+    }
+
+    document.getElementById("current_number").value = number;
+
+    await display_post(control_json[number]);
+}
+
+async function display_post(json_post) {
     let browser_target = document.getElementById("view_target");
 
     let title = json_post.title;
     let link = json_post.direct_link;
-    let image_contents = await zip.files[json_post.hash_filename].async("blob");
+    let image_contents = await main_zip_file.files[json_post.hash_filename].async("blob");
 
     image_contents = await decrypt_blob(image_contents);
 

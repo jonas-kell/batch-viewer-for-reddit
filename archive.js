@@ -38,7 +38,7 @@ function scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
     return url;
 }
 
-function process_html(html = "") {
+async function process_html(html = "") {
     var newHTMLDocument = document.implementation.createHTMLDocument("process");
     var elem = newHTMLDocument.createElement("div");
     elem.innerHTML = html;
@@ -61,18 +61,49 @@ function process_html(html = "") {
                 direct_link: `https://redd.it/${post_id}`,
                 title: post_title,
                 image_link: image_url,
+                series_index: count,
             });
+            count += 1;
         }
     });
 
     // update the fields for the next step
     document.getElementById("start_with_post").value = output_array[output_array.length - 1]["id"];
-    count += number_of_posts;
     document.getElementById("generate_url_action").click();
     document.getElementById("copy_to_clipboard").click();
     document.getElementById("html_input").value = "";
 
     console.log("Information processed and advanced for next step");
+
+    // download the images and zip them
+    var zip = new JSZip();
+    await Promise.all(
+        output_array.map(async (post) => {
+            var link = post.image_link;
+
+            const blob = await fetch(link).then((response) => {
+                if (!response.ok) {
+                    console.error("Network response was not OK");
+                }
+                return response.blob();
+            });
+
+            const file_extension = link.substring(link.lastIndexOf("."));
+            const hash_string = await hash_blob(blob);
+
+            post["hash_filename"] = hash_string + file_extension;
+            zip.file(hash_string + file_extension, blob);
+
+            return Promise.resolve(1);
+        })
+    );
+
+    zip.file("contents.json", JSON.stringify(output_array));
+
+    zip.generateAsync({ type: "blob" }).then(function (content) {
+        // see FileSaver.js
+        saveAs(content, "example.zip");
+    });
 }
 
 function copy_to_clipboard(text = "") {
@@ -87,4 +118,22 @@ function parse_for_image_url(jqueryElem) {
     }
 
     return url;
+}
+
+function hash_blob(blob) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+
+        fileReader.addEventListener("load", () => {
+            crypto.subtle.digest("SHA-1", fileReader.result).then((buffer) => {
+                const typedArray = new Uint8Array(buffer);
+                resolve(Array.prototype.map.call(typedArray, (x) => ("00" + x.toString(16)).slice(-2)).join(""));
+            });
+        });
+        fileReader.addEventListener("error", () => {
+            reject(fileReader.error);
+        });
+
+        fileReader.readAsArrayBuffer(blob);
+    });
 }

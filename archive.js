@@ -1,4 +1,5 @@
-var test = null;
+var number_of_posts = 25;
+var count = 0;
 
 $(document).ready(() => {
     document.getElementById("generate_url_action").addEventListener("click", () => {
@@ -22,7 +23,7 @@ $(document).ready(() => {
     });
 });
 
-function scrape_subreddit_url(subreddit_name = "", start_with_post = "", number_of_posts = 25) {
+function scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
     var start_with_specific_post = start_with_post != "" && start_with_post.length == 6;
 
     console.log(
@@ -30,7 +31,7 @@ function scrape_subreddit_url(subreddit_name = "", start_with_post = "", number_
             (start_with_specific_post ? ` after the post with the id ${start_with_post}` : "")
     );
 
-    var url = `https://old.reddit.com/r/${subreddit_name}/?count=0${
+    var url = `https://old.reddit.com/r/${subreddit_name}/?count=${count}${
         start_with_specific_post ? `&after=t3_${start_with_post}` : ""
     }`;
 
@@ -64,7 +65,14 @@ function process_html(html = "") {
         }
     });
 
-    console.log(output_array);
+    // update the fields for the next step
+    document.getElementById("start_with_post").value = output_array[output_array.length - 1]["id"];
+    count += number_of_posts;
+    document.getElementById("generate_url_action").click();
+    document.getElementById("copy_to_clipboard").click();
+    document.getElementById("html_input").value = "";
+
+    console.log("Information processed and advanced for next step");
 }
 
 function copy_to_clipboard(text = "") {

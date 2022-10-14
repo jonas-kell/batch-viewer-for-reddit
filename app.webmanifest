@@ -1,7 +1,7 @@
 {
-    "name": "Reddit Batch Viewer",
+    "name": "Batch Viewer For Reddit",
     "start_url": "./",
-    "id": "reddit-batch-viewer-1.0",
+    "id": "batch-viewer-for-reddit-1.0",
     "theme_color": "#1976d2",
     "background_color": "#fafafa",
     "display": "standalone",

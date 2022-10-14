@@ -3,7 +3,7 @@
     <head>
         <!-- meta -->
         <meta charset="utf-8" />
-        <title>Reddit Batch Viewer</title>
+        <title>Batch Viewer for Reddit</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta
             name="description"
@@ -25,9 +25,18 @@
         <meta name="msapplication-TileColor" content="#da532c" />
     </head>
     <body>
-        <a href="./index.html"><h1>Reddit Batch Viewer</h1></a>
+        <a href="./index.html"><h1>Batch Viewer for Reddit</h1></a>
 
         <h2>Archive page</h2>
+        <div>
+            Subreddit to scrape<br />
+            <input type="text" id="subreddit_name" placeholder="mathmemes" value="mathmemes" /><br />
+            Number of posts<br />
+            <input type="number" id="number_of_posts" value="100" min="1" /><br />
+            Post to start with (shortlink of "old.reddit.com" format, e.g. "y3215w" in the case of https://redd.it/y3215w)<br />
+            <input type="text" id="start_with_post" />
+            <button id="scrape_action">SCRAPE</button>
+        </div>
     </body>
 
     <script src="archive.js"></script>

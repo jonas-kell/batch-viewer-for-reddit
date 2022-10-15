@@ -85,7 +85,7 @@ async function process_html(html = "") {
         output_array.map(async (post) => {
             var link = post.image_link;
 
-            const blob = await fetch(link).then((response) => {
+            const blob = await fetch(link, { method: "GET" }).then((response) => {
                 if (!response.ok) {
                     console.error("Network response was not OK");
                 }

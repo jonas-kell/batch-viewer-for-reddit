@@ -1,5 +1,5 @@
 let control_json = [];
-let main_zip_file = null;
+let zip_file_array = [];
 
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", () => {
@@ -11,32 +11,37 @@ $(document).ready(() => {
         [fileHandle] = await window.showOpenFilePicker();
         const file = await fileHandle.getFile();
 
-        JSZip.loadAsync(file).then(async function (zip) {
-            let contents = zip.files["contents.json"];
+        // reset storage containers
+        zip_file_array = [1];
+        control_json = [];
 
-            let json = JSON.parse(await contents.async("text"));
+        // read in zip file
+        await read_in_zip_file(file, 0);
 
-            if (encryption_on()) {
-                for (let i = 0; i < json.length; i++) {
-                    json[i].id = await decrypt_text(json[i].id);
-                    json[i].author = await decrypt_text(json[i].author);
-                    json[i].direct_link = await decrypt_text(json[i].direct_link);
-                    json[i].title = await decrypt_text(json[i].title);
-                    json[i].image_link = await decrypt_text(json[i].image_link);
-                }
-            }
+        // reset display
+        reset_display();
+    });
 
-            control_json = json;
-            main_zip_file = zip;
+    $("#zip_filepicker").on("change", async function (evt) {
+        var files = evt.target.files;
+        const nr_zip_files = files.length;
 
-            // set max number display
-            $(".max_number").each((index, element) => {
-                $(element).html(control_json.length - 1);
-            });
+        // reset storage containers
+        zip_file_array = Array.from(Array(nr_zip_files).keys());
+        control_json = [];
 
-            // get image files from zip and append to display
-            select_post(0);
+        // read in zip files
+        for (var i = 0; i < nr_zip_files; i++) {
+            await read_in_zip_file(files[i], i);
+        }
+
+        // sort by series index, as order might have been changed
+        control_json = control_json.sort(function (a, b) {
+            return a.series_index - b.series_index;
         });
+
+        // reset display
+        reset_display();
     });
 
     $(".view_prev").on("click", () => {
@@ -52,6 +57,30 @@ $(document).ready(() => {
     });
 });
 
+async function read_in_zip_file(file, index) {
+    await JSZip.loadAsync(file).then(async function (zip) {
+        zip_file_array[index] = zip; // push directly into permanent zip file storage
+
+        let contents = zip.files["contents.json"];
+        let json = JSON.parse(await contents.async("text"));
+
+        if (encryption_on()) {
+            for (let j = 0; j < json.length; j++) {
+                json[j].id = await decrypt_text(json[j].id);
+                json[j].author = await decrypt_text(json[j].author);
+                json[j].direct_link = await decrypt_text(json[j].direct_link);
+                json[j].title = await decrypt_text(json[j].title);
+                json[j].image_link = await decrypt_text(json[j].image_link);
+            }
+        }
+
+        for (let j = 0; j < json.length; j++) {
+            json[j]["use_zip_file_nr"] = index; // cache in what zip file the image can be found
+            control_json.push(json[j]); // append directly to permanent control array
+        }
+    });
+}
+
 async function select_post(number) {
     if (number >= 0 && number < control_json.length) {
         // ok region
@@ -63,22 +92,37 @@ async function select_post(number) {
         $(element).val(number);
     });
 
-    await display_post(control_json[number]);
+    let zip_file_nr = 0;
+    if (control_json[number]["use_zip_file_nr"] != undefined) {
+        zip_file_nr = control_json[number]["use_zip_file_nr"];
+    }
+
+    await display_post(control_json[number], zip_file_nr);
 }
 
-async function display_post(json_post) {
+async function display_post(json_post, zip_file_nr = 0) {
     let browser_target = document.getElementById("view_target");
 
     let title = json_post.title;
     let author = json_post.author;
     let link = json_post.direct_link;
-    let image_contents = await main_zip_file.files[json_post.hash_filename].async("blob");
+    let image_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
 
     image_contents = await decrypt_blob(image_contents);
 
     browser_target.innerHTML = `<h2>${title}</h2> <img src="${await blobToBase64(
         image_contents
     )}" style="width: 60%;"><h4>${author}</h4><span>${link}</span>`;
+}
+
+function reset_display() {
+    // set max number display
+    $(".max_number").each((index, element) => {
+        $(element).html(control_json.length - 1);
+    });
+
+    // get image files from zip and append to display
+    select_post(0);
 }
 
 function blobToBase64(blob) {

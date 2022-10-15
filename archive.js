@@ -1,25 +1,22 @@
-var number_of_posts = 25;
-var count = 0;
+let archived_count = 0;
+let count = 0;
 
 $(document).ready(() => {
     document.getElementById("generate_url_action").addEventListener("click", () => {
         var subreddit_name = document.getElementById("subreddit_name").value;
         var start_with_post = document.getElementById("start_with_post").value;
 
-        document.getElementById("url_output").value = scrape_subreddit_url(subreddit_name, start_with_post);
+        show_scrape_subreddit_url(subreddit_name, start_with_post);
     });
 
     document.getElementById("copy_to_clipboard").addEventListener("click", () => {
         copy_to_clipboard(document.getElementById("url_output").value);
     });
 
-    document.getElementById("process_html").addEventListener("click", () => {
-        var html = document.getElementById("html_input").value;
+    document.getElementById("process_posts").addEventListener("click", () => {
+        var api_url = document.getElementById("api_url_output").value;
 
-        if (html != "") {
-            console.log("Processing HTML...");
-            process_html(html);
-        }
+        process_posts(api_url);
     });
 
     document.getElementById("update_encryption_key").addEventListener("click", () => {
@@ -27,55 +24,59 @@ $(document).ready(() => {
     });
 });
 
-function scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
+function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
     var start_with_specific_post = start_with_post != "" && start_with_post.length == 6;
 
     console.log(
-        `URL for scraping subreddit "${subreddit_name}" for ${number_of_posts} posts` +
+        `URL for scraping subreddit "${subreddit_name}" for next set of posts` +
             (start_with_specific_post ? ` after the post with the id ${start_with_post}` : "")
     );
 
-    var url = `https://old.reddit.com/r/${subreddit_name}/?count=${count}${
+    let url = `https://old.reddit.com/r/${subreddit_name}/?count=${count}${
         start_with_specific_post ? `&after=t3_${start_with_post}` : ""
     }`;
+    let api_url = url.replace("old", "api");
 
-    return url;
+    document.getElementById("url_output").value = url;
+    document.getElementById("api_url_output").value = api_url;
 }
 
-async function process_html(html = "") {
-    var newHTMLDocument = document.implementation.createHTMLDocument("process");
-    var elem = newHTMLDocument.createElement("div");
-    elem.innerHTML = html;
+async function process_posts(api_url = "") {
+    if (api_url == "") {
+        console.error("Need to set url first");
+        return;
+    }
 
-    jqueryElem = $(elem);
+    const json_response = await fetch(api_url, {
+        method: "GET",
+    }).then((response) => {
+        if (!response.ok) {
+            console.error("Network response was not OK");
+        }
+        return response.json();
+    });
 
     var output_array = [];
-    // find the elements that start with the known id prefix
-    jqueryElem.find("[id^=thing_t3_]:not(.promoted):not(.stickied)").each((index, element) => {
-        element = $(element);
+    json_response["data"]["children"].forEach((post) => {
+        post = post["data"];
 
-        // extract metadata
-        var post_id = element.attr("id").substring(9);
-        var post_title = element.find(".title .title").first().text();
-        var image_url = parse_for_image_url(element);
-
-        if (image_url != "") {
+        if (!(post["stickied"] ?? false) && allowed_image_domain(post["domain"] ?? "")) {
             output_array.push({
-                id: post_id,
-                direct_link: `https://redd.it/${post_id}`,
-                title: post_title,
-                image_link: image_url,
-                series_index: count,
+                id: post["name"], // there is an extra id field. No idea why they are different and what the "t3_" really. Probably post type
+                author: post["author"] ?? "",
+                direct_link: `https://redd.it/${post["name"]}`,
+                title: post["title"] ?? "",
+                image_link: post["url"],
+                series_index: archived_count,
             });
-            count += 1;
+            archived_count += 1;
         }
     });
 
     // update the fields for the next step
-    document.getElementById("start_with_post").value = output_array[output_array.length - 1]["id"];
+    count += 25;
+    document.getElementById("start_with_post").value = json_response["data"]["after"].substr(3);
     document.getElementById("generate_url_action").click();
-    document.getElementById("copy_to_clipboard").click();
-    document.getElementById("html_input").value = "";
 
     console.log("Information processed and advanced for next step");
 
@@ -108,6 +109,7 @@ async function process_html(html = "") {
     if (encryption_on()) {
         for (let i = 0; i < output_array.length; i++) {
             output_array[i].id = await encrypt_text(output_array[i].id);
+            output_array[i].author = await encrypt_text(output_array[i].author);
             output_array[i].direct_link = await encrypt_text(output_array[i].direct_link);
             output_array[i].title = await encrypt_text(output_array[i].title);
             output_array[i].image_link = await encrypt_text(output_array[i].image_link);
@@ -125,13 +127,6 @@ function copy_to_clipboard(text = "") {
     navigator.clipboard.writeText(text);
 }
 
-function parse_for_image_url(jqueryElem) {
-    var url = "";
-
-    if (jqueryElem.html().includes("i.imgur.com")) {
-        //jqueryElem.html().includes("i.redd.it") ||
-        url = jqueryElem.attr("data-url");
-    }
-
-    return url;
+function allowed_image_domain(domain) {
+    return domain == "i.redd.it" || domain == "i.imgur.com";
 }

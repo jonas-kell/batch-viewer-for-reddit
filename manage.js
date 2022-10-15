@@ -19,6 +19,7 @@ $(document).ready(() => {
             if (encryption_on()) {
                 for (let i = 0; i < json.length; i++) {
                     json[i].id = await decrypt_text(json[i].id);
+                    json[i].author = await decrypt_text(json[i].author);
                     json[i].direct_link = await decrypt_text(json[i].direct_link);
                     json[i].title = await decrypt_text(json[i].title);
                     json[i].image_link = await decrypt_text(json[i].image_link);
@@ -69,6 +70,7 @@ async function display_post(json_post) {
     let browser_target = document.getElementById("view_target");
 
     let title = json_post.title;
+    let author = json_post.author;
     let link = json_post.direct_link;
     let image_contents = await main_zip_file.files[json_post.hash_filename].async("blob");
 
@@ -76,7 +78,7 @@ async function display_post(json_post) {
 
     browser_target.innerHTML = `<h2>${title}</h2> <img src="${await blobToBase64(
         image_contents
-    )}" style="width: 60%;"><br /><span>${link}</span>`;
+    )}" style="width: 60%;"><h4>${author}</h4><span>${link}</span>`;
 }
 
 function blobToBase64(blob) {

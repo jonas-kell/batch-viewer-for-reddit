@@ -85,7 +85,9 @@ async function process_html(html = "") {
         output_array.map(async (post) => {
             var link = post.image_link;
 
-            const blob = await fetch(link, { method: "GET" }).then((response) => {
+            const blob = await fetch(link, {
+                method: "GET",
+            }).then((response) => {
                 if (!response.ok) {
                     console.error("Network response was not OK");
                 }
@@ -126,7 +128,8 @@ function copy_to_clipboard(text = "") {
 function parse_for_image_url(jqueryElem) {
     var url = "";
 
-    if (jqueryElem.html().includes("i.redd.it") || jqueryElem.html().includes("i.imgur.com")) {
+    if (jqueryElem.html().includes("i.imgur.com")) {
+        //jqueryElem.html().includes("i.redd.it") ||
         url = jqueryElem.attr("data-url");
     }
 

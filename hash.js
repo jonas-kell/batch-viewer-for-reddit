@@ -53,8 +53,13 @@ function set_key_to_use(input_id, button_id) {
 
     if (password == "") {
         used_key = null;
-        $("#" + String(button_id)).attr("disabled", null);
+
+        // show encryption is off
+        $("#" + String(button_id)).css("background-color", "");
         console.log("Encryption disabled");
+
+        // reactivate button
+        $("#" + String(button_id)).attr("disabled", null);
     } else {
         const enc = new TextEncoder();
         crypto.subtle
@@ -78,7 +83,13 @@ function set_key_to_use(input_id, button_id) {
                     )
                     .then((encryptionKey) => {
                         used_key = encryptionKey;
-                        console.log("Encryption key set");
+
+                        // show encryption is on
+                        $("#" + String(button_id)).css("background-color", "chartreuse");
+                        $("#" + String(input_id)).val("");
+                        console.log("Encryption key set and enabled");
+
+                        // reactivate button
                         $("#" + String(button_id)).attr("disabled", null);
                     });
             });

@@ -1,6 +1,7 @@
 urlsToCache = [
     "https://jonas-kell.github.io/batch-viewer-for-reddit/",
-    "",
+    // "/", // technically this would need to be cached for properly cahing on localhost. It however breaks the deploy version, because that does not live on the top level of a domain, but is in the route "...batch-viewer-for-reddit"
+    "", // Replacement for the starting page "/" for relative urls. I do not think it is working though. Replacement for in-browser-usage is the full url of the deployment (first entry) and for the installed version the entrypoint is "index.html" anyway (next line)
     "index.html",
     "app.js",
     "styles.css",
@@ -34,10 +35,16 @@ urlsToCache = [
 self.addEventListener("install", (event) => {
     console.log("Service worker installed");
 
-    // cache for offlie use
+    // cache all application requirements for offline use
     event.waitUntil(
         caches.open("pwa-assets").then((cache) => {
-            return cache.addAll(urlsToCache);
+            // add cache busting param for own .js and .html
+            let bust = Date.now();
+            let urls_with_cache_bust = urlsToCache.map((url) =>
+                url.includes(".html") || (url.includes(".js") && !url.includes(".min.js")) ? url + "?bust=" + bust : url
+            );
+
+            return cache.addAll(urls_with_cache_bust);
         })
     );
 });
@@ -48,7 +55,8 @@ self.addEventListener("activate", (event) => {
 // fetch event listener
 self.addEventListener("fetch", (event) => {
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
+        // ignore search params (like url "...?bust=123123123") to allow for cache busting to take place as there is no other use for the search parameters in this application
+        caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
             // It can update the cache to serve updated content on the next request
             return cachedResponse || fetch(event.request);
         })

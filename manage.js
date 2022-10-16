@@ -66,11 +66,11 @@ async function read_in_zip_file(file, index) {
 
         if (encryption_on()) {
             for (let j = 0; j < json.length; j++) {
-                json[j].id = await decrypt_text(json[j].id);
-                json[j].author = await decrypt_text(json[j].author);
-                json[j].direct_link = await decrypt_text(json[j].direct_link);
-                json[j].title = await decrypt_text(json[j].title);
-                json[j].media_url = await decrypt_text(json[j].media_url);
+                json[j].id = await decrypt_text(json[j].id, json[j]["iv_string"] ?? "");
+                json[j].author = await decrypt_text(json[j].author, json[j]["iv_string"] ?? "");
+                json[j].direct_link = await decrypt_text(json[j].direct_link, json[j]["iv_string"] ?? "");
+                json[j].title = await decrypt_text(json[j].title, json[j]["iv_string"] ?? "");
+                json[j].media_url = await decrypt_text(json[j].media_url, json[j]["iv_string"] ?? "");
             }
         }
 
@@ -110,7 +110,7 @@ async function display_post(json_post, zip_file_nr = 0) {
     // regenerate blob
     let visual_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
     visual_contents = visual_contents.slice(0, visual_contents.size, json_post.mime_type); // write original mime type back into
-    visual_contents = await decrypt_blob(visual_contents);
+    visual_contents = await decrypt_blob(visual_contents, json_post["iv_string"] ?? "");
 
     const style = `style="width: 60%;"`;
 

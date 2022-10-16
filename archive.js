@@ -92,11 +92,16 @@ async function process_posts(api_url = "") {
 
             const file_extension = link.substring(link.lastIndexOf("."));
 
-            blob = await encrypt_blob(blob); // encrypt before hashing
+            if (encryption_on()) {
+                post["iv_string"] = uint8array_to_iv_string(crypto.getRandomValues(new Uint8Array(12)));
+            }
+
+            blob = await encrypt_blob(blob, post["iv_string"] ?? ""); // encrypt before hashing
             const hash_string = await hash_blob(blob);
 
             post["hash_filename"] = hash_string + file_extension;
             post["mime_type"] = blob.type;
+
             zip.file(hash_string + file_extension, blob);
 
             return Promise.resolve(1);
@@ -106,11 +111,11 @@ async function process_posts(api_url = "") {
     // encrypt lookup json
     if (encryption_on()) {
         for (let i = 0; i < output_array.length; i++) {
-            output_array[i].id = await encrypt_text(output_array[i].id);
-            output_array[i].author = await encrypt_text(output_array[i].author);
-            output_array[i].direct_link = await encrypt_text(output_array[i].direct_link);
-            output_array[i].title = await encrypt_text(output_array[i].title);
-            output_array[i].media_url = await encrypt_text(output_array[i].media_url);
+            output_array[i].id = await encrypt_text(output_array[i].id, output_array[i]["iv_string"] ?? "");
+            output_array[i].author = await encrypt_text(output_array[i].author, output_array[i]["iv_string"] ?? "");
+            output_array[i].direct_link = await encrypt_text(output_array[i].direct_link, output_array[i]["iv_string"] ?? "");
+            output_array[i].title = await encrypt_text(output_array[i].title, output_array[i]["iv_string"] ?? "");
+            output_array[i].media_url = await encrypt_text(output_array[i].media_url, output_array[i]["iv_string"] ?? "");
         }
     }
     zip.file("contents.json", JSON.stringify(output_array));

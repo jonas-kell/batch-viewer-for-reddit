@@ -35,9 +35,8 @@ var used_key = null;
 
 // This is not really a proper way to use salt, but it is sufficent for this purpose.
 // Secure implementation would require randomizing the salt, but that requires storing it also and I do not have the capability to do that
-// This means passphrases need to be so complex that they cennot be attacked with dictionary attacks. Otherwise I cannot help you
+// This means passphrases need to be so complex that they cannot be attacked with dictionary attacks. Otherwise I cannot help you
 const salt = new Uint8Array([254, 136, 190, 138, 248, 102, 91, 48, 137, 81, 219, 33, 227, 152, 66, 233]);
-const iv = new Uint8Array([215, 36, 78, 238, 29, 208, 95, 40, 18, 30, 124, 64]);
 
 function encryption_on() {
     if (used_key == null) {
@@ -81,7 +80,7 @@ function set_key_to_use(input_id, button_id) {
                         false,
                         ["encrypt", "decrypt"]
                     )
-                    .then((encryptionKey) => {
+                    .then(async (encryptionKey) => {
                         used_key = encryptionKey;
 
                         // show encryption is on
@@ -96,7 +95,7 @@ function set_key_to_use(input_id, button_id) {
     }
 }
 
-async function encrypt_text(text) {
+async function encrypt_text(text, iv_string) {
     if (!encryption_on()) {
         return text;
     }
@@ -104,19 +103,23 @@ async function encrypt_text(text) {
     let enc = new TextEncoder();
     let message = enc.encode(text);
 
-    ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, used_key, message);
+    ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, message);
 
     return array_buffer_to_hex_string(ciphertext);
 }
 
-async function decrypt_text(text) {
+async function decrypt_text(text, iv_string) {
     if (!encryption_on()) {
         return text;
     }
 
     let decrypted = "";
     try {
-        decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, used_key, hex_string_to_typed_array(text));
+        decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) },
+            used_key,
+            hex_string_to_typed_array(text)
+        );
     } catch (error) {
         console.error("error while decrypting text. Probably used the wrong key");
         return "Decryption Error";
@@ -126,7 +129,7 @@ async function decrypt_text(text) {
     return dec.decode(decrypted);
 }
 
-function encrypt_blob(blob) {
+function encrypt_blob(blob, iv_string) {
     if (!encryption_on()) {
         return blob;
     }
@@ -135,7 +138,7 @@ function encrypt_blob(blob) {
         const asArrayBuffer = await blob.arrayBuffer();
 
         window.crypto.subtle
-            .encrypt({ name: "AES-GCM", iv: iv }, used_key, asArrayBuffer)
+            .encrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, asArrayBuffer)
             .then((buffer) => {
                 let out_blob = new Blob([buffer], {
                     type: blob.type,
@@ -149,7 +152,7 @@ function encrypt_blob(blob) {
     });
 }
 
-function decrypt_blob(blob) {
+function decrypt_blob(blob, iv_string) {
     if (!encryption_on()) {
         return blob;
     }
@@ -159,7 +162,7 @@ function decrypt_blob(blob) {
 
         try {
             crypto.subtle
-                .decrypt({ name: "AES-GCM", iv: iv }, used_key, asArrayBuffer)
+                .decrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, asArrayBuffer)
                 .then((buffer) => {
                     let out_blob = new Blob([buffer], {
                         type: blob.type,
@@ -175,4 +178,12 @@ function decrypt_blob(blob) {
             console.error("error while decrypting blob. Probably used the wrong key");
         }
     });
+}
+
+function iv_string_to_uint8array(iv_string) {
+    return hex_string_to_typed_array(iv_string);
+}
+
+function uint8array_to_iv_string(array) {
+    return array_buffer_to_hex_string(array);
 }

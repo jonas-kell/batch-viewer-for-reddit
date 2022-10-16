@@ -70,7 +70,7 @@ async function read_in_zip_file(file, index) {
                 json[j].author = await decrypt_text(json[j].author);
                 json[j].direct_link = await decrypt_text(json[j].direct_link);
                 json[j].title = await decrypt_text(json[j].title);
-                json[j].image_link = await decrypt_text(json[j].image_link);
+                json[j].media_url = await decrypt_text(json[j].media_url);
             }
         }
 

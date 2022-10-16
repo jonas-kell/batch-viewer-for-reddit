@@ -60,13 +60,15 @@ async function process_posts(api_url = "") {
     json_response["data"]["children"].forEach((post) => {
         post = post["data"];
 
-        if (!(post["stickied"] ?? false) && allowed_image_domain(post["domain"] ?? "")) {
+        const md_url = media_url(post);
+
+        if (!(post["stickied"] ?? false) && md_url != "") {
             output_array.push({
                 id: post["name"], // there is an extra id field. No idea why they are different and what the "t3_" really. Probably post type
                 author: post["author"] ?? "",
                 direct_link: `https://redd.it/${post["name"]}`,
                 title: post["title"] ?? "",
-                image_link: post["url"],
+                media_url: md_url,
                 series_index: archived_count,
             });
             archived_count += 1;
@@ -84,7 +86,7 @@ async function process_posts(api_url = "") {
     var zip = new JSZip();
     await Promise.all(
         output_array.map(async (post) => {
-            var link = post.image_link;
+            var link = post.media_url;
 
             let blob = await get_media(link);
 
@@ -108,7 +110,7 @@ async function process_posts(api_url = "") {
             output_array[i].author = await encrypt_text(output_array[i].author);
             output_array[i].direct_link = await encrypt_text(output_array[i].direct_link);
             output_array[i].title = await encrypt_text(output_array[i].title);
-            output_array[i].image_link = await encrypt_text(output_array[i].image_link);
+            output_array[i].media_url = await encrypt_text(output_array[i].media_url);
         }
     }
     zip.file("contents.json", JSON.stringify(output_array));
@@ -123,8 +125,18 @@ function copy_to_clipboard(text = "") {
     navigator.clipboard.writeText(text);
 }
 
-function allowed_image_domain(domain) {
-    return domain == "i.redd.it" || domain == "i.imgur.com";
+function media_url(json_post) {
+    const domain = json_post["domain"] ?? "";
+
+    if (domain == "i.redd.it" || domain == "i.imgur.com") {
+        return json_post["url"];
+    }
+
+    if (domain == "v.redd.it") {
+        return json_post.media?.reddit_video.fallback_url == undefined ? "" : json_post.media?.reddit_video.fallback_url;
+    }
+
+    return "";
 }
 
 async function get_media(url = "") {

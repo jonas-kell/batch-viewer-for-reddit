@@ -10,7 +10,9 @@ Supports encryption, as I wanted an experiment to play around with the `crypto` 
 
 ### Supported browsers
 
-Currently only working for chrome. Archiving working on firefox and andriod, but they currently do not have access to the [File System Access API](https://web.dev/file-system-access/), so no playback...
+Complete featureset currently only working for chrome.
+Archiving working on most browsers, but images get only downloaded when starting th app locally (because of cors).
+No browser except chrome currently has access to the [File System Access API](https://web.dev/file-system-access/), so the zip files for playback need to be loaded from smaller zip files with the lower-performance file pickers instead.
 
 ### Hosted version
 
@@ -23,5 +25,6 @@ Run in the base of the project:
 ```cmd
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
+
 This is also useful for archiving, because most of the images that are hosted on `i.redd.it` will net get served to the online version because of [cors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
 However when running the server locally and opening [http://localhost:8080](http://localhost:8080), cors is allowed by reddit's CDN.

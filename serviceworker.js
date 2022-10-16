@@ -1,5 +1,7 @@
 urlsToCache = [
+    "https://jonas-kell.github.io/batch-viewer-for-reddit/",
     "",
+    "/",
     "index.html",
     "app.js",
     "styles.css",

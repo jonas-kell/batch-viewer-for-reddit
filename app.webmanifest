@@ -1,6 +1,6 @@
 {
     "name": "Batch Viewer For Reddit",
-    "start_url": "./",
+    "start_url": "./index.html",
     "id": "batch-viewer-for-reddit-1.0",
     "theme_color": "#1976d2",
     "background_color": "#fafafa",

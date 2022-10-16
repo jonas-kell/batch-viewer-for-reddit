@@ -106,13 +106,27 @@ async function display_post(json_post, zip_file_nr = 0) {
     let title = json_post.title;
     let author = json_post.author;
     let link = json_post.direct_link;
-    let image_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
 
-    image_contents = await decrypt_blob(image_contents);
+    // regenerate blob
+    let visual_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
+    visual_contents = visual_contents.slice(0, visual_contents.size, json_post.mime_type); // write original mime type back into
+    visual_contents = await decrypt_blob(visual_contents);
 
-    browser_target.innerHTML = `<h2>${title}</h2> <img src="${await blobToBase64(
-        image_contents
-    )}" style="width: 60%;"><h4>${author}</h4><span>${link}</span>`;
+    const style = `style="width: 60%;"`;
+
+    let content = "";
+    // generate media element
+    if (visual_contents.type.includes("video")) {
+        content = `<video ${style} autoplay muted controls loop><source src="${await blobToBase64(
+            visual_contents
+        )}">Your browser does not support the video tag.</video>`;
+    } else {
+        // assume image mime type
+        content = `<img src="${await blobToBase64(visual_contents)}"  ${style}></img>`;
+    }
+
+    // set html output
+    browser_target.innerHTML = `<h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span>`;
 }
 
 function reset_display() {

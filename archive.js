@@ -86,20 +86,16 @@ async function process_posts(api_url = "") {
         output_array.map(async (post) => {
             var link = post.image_link;
 
-            const blob = await fetch(link, {
-                method: "GET",
-            }).then((response) => {
-                if (!response.ok) {
-                    console.error("Network response was not OK");
-                }
-                return response.blob();
-            });
+            let blob = await get_media(link);
 
             const file_extension = link.substring(link.lastIndexOf("."));
+
+            blob = await encrypt_blob(blob); // encrypt before hashing
             const hash_string = await hash_blob(blob);
 
             post["hash_filename"] = hash_string + file_extension;
-            zip.file(hash_string + file_extension, await encrypt_blob(blob));
+            post["mime_type"] = blob.type;
+            zip.file(hash_string + file_extension, blob);
 
             return Promise.resolve(1);
         })
@@ -129,4 +125,44 @@ function copy_to_clipboard(text = "") {
 
 function allowed_image_domain(domain) {
     return domain == "i.redd.it" || domain == "i.imgur.com";
+}
+
+async function get_media(url = "") {
+    const lower_url = url.toLowerCase();
+    // normal picture or mp4 video
+    if (
+        lower_url.includes(".jpg") ||
+        lower_url.includes(".jpeg") ||
+        lower_url.includes(".png") ||
+        lower_url.includes(".svg") ||
+        lower_url.includes(".mp4") ||
+        (lower_url.includes(".gif") && !lower_url.includes(".gifv"))
+    ) {
+        return await fetch(url, {
+            method: "GET",
+        }).then((response) => {
+            if (!response.ok) {
+                console.error("Network response was not OK");
+            }
+            return response.blob();
+        });
+    }
+    // gifv
+    if (lower_url.includes(".gifv")) {
+        let gifv_text = await fetch(url, {
+            method: "GET",
+        }).then((response) => {
+            if (!response.ok) {
+                console.error("Network response was not OK");
+            }
+            return response.text();
+        });
+
+        const video_url = gifv_text.match(/content="(https:\/\/.+\.mp4)"/)[1]; // 0 is whole match, 1 the capturing group
+
+        return await get_media(video_url);
+    }
+
+    console.error("Unprocessable data entity for url" + url);
+    return null;
 }

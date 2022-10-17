@@ -1,6 +1,6 @@
 let control_json = [];
 let zip_file_array = [];
-let decrypted_media_cache = {};
+let rendered_media_cache = {};
 
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", () => {
@@ -15,7 +15,7 @@ $(document).ready(() => {
         // reset storage containers
         zip_file_array = [1];
         control_json = [];
-        decrypted_media_cache = {};
+        clear_rendered_media_cache();
 
         // read in zip file
         await read_in_zip_file(file, 0);
@@ -34,7 +34,7 @@ $(document).ready(() => {
         // reset storage containers
         zip_file_array = Array.from(Array(nr_zip_files).keys());
         control_json = [];
-        decrypted_media_cache = {};
+        clear_rendered_media_cache();
 
         // read in zip files
         for (var i = 0; i < nr_zip_files; i++) {
@@ -61,6 +61,7 @@ $(document).ready(() => {
     });
 
     $("#post_width").on("change", () => {
+        clear_rendered_media_cache();
         select_post(document.getElementById("current_number_top").value);
     });
 });
@@ -104,14 +105,37 @@ async function select_post(number) {
     await display_post(control_json[number]);
 
     // cache next posts asyncronously in the background
-    retrieve_media_content(control_json[(number + 1) % control_json.length]);
-    retrieve_media_content(control_json[(number + 2) % control_json.length]);
-    retrieve_media_content(control_json[(number + 3) % control_json.length]);
+    render_post(control_json[(number + 1) % control_json.length]);
+    render_post(control_json[(number + 2) % control_json.length]);
+    render_post(control_json[(number + 3) % control_json.length]);
 }
 
 async function display_post(json_post) {
     let browser_target = document.getElementById("view_target");
+    let cache_region = document.getElementById("view_area_cache");
 
+    const rendered_element = await render_post(json_post);
+
+    // move no longer needed elements out
+    [...browser_target.children].forEach((child) => {
+        cache_region.appendChild(child);
+    });
+
+    // move new element in
+    browser_target.appendChild(rendered_element);
+}
+
+// caches the result
+async function render_post(json_post) {
+    const filename = json_post.hash_filename;
+    const cache_index = (json_post["use_zip_file_nr"] ?? "") + filename;
+
+    // if already cached, return immediately
+    if (Object.keys(rendered_media_cache).includes(cache_index)) {
+        return rendered_media_cache[cache_index][1];
+    }
+
+    // not cached, so create new
     let title = json_post.title;
     let author = json_post.author;
     let link = json_post.direct_link;
@@ -134,7 +158,55 @@ async function display_post(json_post) {
     }
 
     // set html output
-    browser_target.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
+    const cache_element = document.createElement("div");
+    cache_element.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
+
+    // append to dom
+    let cache_region = document.getElementById("view_area_cache");
+    cache_region.appendChild(cache_element);
+
+    // element not in cache. Add before returning
+    add_element_to_media_cache(cache_index, cache_element);
+
+    return cache_element;
+}
+
+function add_element_to_media_cache(cache_index, cache_element) {
+    // add element
+    rendered_media_cache[cache_index] = [0, cache_element]; // [age, cache_element]
+
+    // age all entries
+    for (const media_key in rendered_media_cache) {
+        rendered_media_cache[media_key][0]++;
+    }
+
+    // delete too old entries
+    Object.keys(rendered_media_cache).forEach((media_key) => {
+        if (rendered_media_cache[media_key][0] > 8) {
+            rendered_media_cache[media_key][1].remove(); // remove from dom
+            delete rendered_media_cache[media_key]; // remove js
+        }
+    });
+}
+
+function clear_rendered_media_cache() {
+    let cache_region = document.getElementById("view_area_cache");
+    let browser_target = document.getElementById("view_target");
+
+    // delete dom nodes
+    var child = cache_region.lastElementChild;
+    while (child) {
+        cache_region.removeChild(child);
+        child = cache_region.lastElementChild;
+    }
+    child = browser_target.lastElementChild;
+    while (child) {
+        browser_target.removeChild(child);
+        child = browser_target.lastElementChild;
+    }
+
+    // clear js cache
+    rendered_media_cache = {};
 }
 
 // returns a typed media blob
@@ -144,40 +216,12 @@ async function retrieve_media_content(json_post) {
         zip_file_nr = json_post["use_zip_file_nr"];
     }
 
-    const filename = json_post.hash_filename;
-    const cache_index = zip_file_nr + filename;
-
-    // if already cached, return immediately
-    if (Object.keys(decrypted_media_cache).includes(cache_index)) {
-        return decrypted_media_cache[cache_index][1];
-    }
-
     // regenerate blob from zip
-    let media_contents = await zip_file_array[zip_file_nr].files[filename].async("blob");
+    let media_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
     media_contents = media_contents.slice(0, media_contents.size, json_post.mime_type); // write original mime type back into
     media_contents = await decrypt_blob(media_contents, json_post["iv_string"] ?? "");
 
-    // element not in cache. Add before returning
-    add_element_to_decrypted_media_cache(cache_index, media_contents);
-
     return media_contents;
-}
-
-function add_element_to_decrypted_media_cache(cache_index, media_blob) {
-    // add element
-    decrypted_media_cache[cache_index] = [0, media_blob]; // [age, media_blob]
-
-    // age all entries
-    for (const media_key in decrypted_media_cache) {
-        decrypted_media_cache[media_key][0]++;
-    }
-
-    // delete too old entries
-    Object.keys(decrypted_media_cache).forEach((media_key) => {
-        if (decrypted_media_cache[media_key][0] > 8) {
-            delete decrypted_media_cache[media_key];
-        }
-    });
 }
 
 function reset_display() {

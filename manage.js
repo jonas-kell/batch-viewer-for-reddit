@@ -56,6 +56,10 @@ $(document).ready(() => {
 
         select_post(number + 1);
     });
+
+    $("#post_width").on("change", () => {
+        select_post(document.getElementById("current_number_top").value);
+    });
 });
 
 async function read_in_zip_file(file, index) {
@@ -115,7 +119,7 @@ async function display_post(json_post, zip_file_nr = 0) {
     visual_contents = visual_contents.slice(0, visual_contents.size, json_post.mime_type); // write original mime type back into
     visual_contents = await decrypt_blob(visual_contents, json_post["iv_string"] ?? "");
 
-    const style = `style="width: 60%;"`;
+    const style = `style="width: ${$("#post_width").val()}%;"`;
 
     let content = "";
     // generate media element

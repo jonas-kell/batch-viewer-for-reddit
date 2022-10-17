@@ -105,9 +105,16 @@ async function select_post(number) {
     await display_post(control_json[number]);
 
     // cache next posts asyncronously in the background
-    render_post(control_json[(number + 1) % control_json.length]);
-    render_post(control_json[(number + 2) % control_json.length]);
-    render_post(control_json[(number + 3) % control_json.length]);
+    const time_difference = 400;
+    const number_of_posts_to_cache = 3;
+    function cache_in_background(post_nr, offset) {
+        setTimeout(() => {
+            render_post(control_json[(post_nr + offset) % control_json.length]);
+        }, time_difference * offset);
+    }
+    for (let i = 1; i <= number_of_posts_to_cache; i++) {
+        cache_in_background(number, i);
+    }
 }
 
 async function display_post(json_post) {

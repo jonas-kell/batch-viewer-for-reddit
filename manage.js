@@ -44,13 +44,13 @@ $(document).ready(() => {
         reset_display();
     });
 
-    $(".view_prev").on("click", () => {
+    $(document).on("click", ".view_prev", () => {
         let number = parseInt(document.getElementById("current_number_top").value);
 
         select_post(number - 1);
     });
 
-    $(".view_next").on("click", () => {
+    $(document).on("click", ".view_next", () => {
         let number = parseInt(document.getElementById("current_number_top").value);
 
         select_post(number + 1);
@@ -126,7 +126,7 @@ async function display_post(json_post, zip_file_nr = 0) {
     }
 
     // set html output
-    browser_target.innerHTML = `<h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span>`;
+    browser_target.innerHTML = `<h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
 }
 
 function reset_display() {

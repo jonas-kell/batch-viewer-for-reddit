@@ -18,6 +18,9 @@ $(document).ready(() => {
         // read in zip file
         await read_in_zip_file(file, 0);
 
+        // sort or randomize order
+        reorder_control_array();
+
         // reset display
         reset_display();
     });
@@ -35,10 +38,8 @@ $(document).ready(() => {
             await read_in_zip_file(files[i], i);
         }
 
-        // sort by series index, as order might have been changed
-        control_json = control_json.sort(function (a, b) {
-            return a.series_index - b.series_index;
-        });
+        // sort or randomize order
+        reorder_control_array();
 
         // reset display
         reset_display();
@@ -147,4 +148,30 @@ function blobToBase64(blob) {
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
     });
+}
+
+function shuffle(array) {
+    const newArray = [...array];
+    const length = newArray.length;
+
+    for (let start = 0; start < length; start++) {
+        const randomPosition = Math.floor((newArray.length - start) * Math.random());
+        const randomItem = newArray.splice(randomPosition, 1);
+
+        newArray.push(...randomItem);
+    }
+
+    return newArray;
+}
+
+function reorder_control_array() {
+    // sort by series index, as order might have been changed
+    if (document.getElementById("randomize").checked) {
+        // random order
+        control_json = shuffle(control_json);
+    } else {
+        control_json = control_json.sort(function (a, b) {
+            return a.series_index - b.series_index;
+        });
+    }
 }

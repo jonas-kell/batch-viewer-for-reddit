@@ -1,5 +1,6 @@
 let control_json = [];
 let zip_file_array = [];
+let decrypted_media_cache = {};
 
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", () => {
@@ -14,6 +15,7 @@ $(document).ready(() => {
         // reset storage containers
         zip_file_array = [1];
         control_json = [];
+        decrypted_media_cache = {};
 
         // read in zip file
         await read_in_zip_file(file, 0);
@@ -32,6 +34,7 @@ $(document).ready(() => {
         // reset storage containers
         zip_file_array = Array.from(Array(nr_zip_files).keys());
         control_json = [];
+        decrypted_media_cache = {};
 
         // read in zip files
         for (var i = 0; i < nr_zip_files; i++) {
@@ -98,15 +101,15 @@ async function select_post(number) {
         $(element).val(number);
     });
 
-    let zip_file_nr = 0;
-    if (control_json[number]["use_zip_file_nr"] != undefined) {
-        zip_file_nr = control_json[number]["use_zip_file_nr"];
-    }
+    await display_post(control_json[number]);
 
-    await display_post(control_json[number], zip_file_nr);
+    // cache next posts asyncronously in the background
+    retrieve_media_content(control_json[(number + 1) % control_json.length]);
+    retrieve_media_content(control_json[(number + 2) % control_json.length]);
+    retrieve_media_content(control_json[(number + 3) % control_json.length]);
 }
 
-async function display_post(json_post, zip_file_nr = 0) {
+async function display_post(json_post) {
     let browser_target = document.getElementById("view_target");
 
     let title = json_post.title;
@@ -114,26 +117,67 @@ async function display_post(json_post, zip_file_nr = 0) {
     let link = json_post.direct_link;
     let subreddit = json_post.subreddit ?? "";
 
-    // regenerate blob
-    let visual_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
-    visual_contents = visual_contents.slice(0, visual_contents.size, json_post.mime_type); // write original mime type back into
-    visual_contents = await decrypt_blob(visual_contents, json_post["iv_string"] ?? "");
+    // retrieve blob
+    let media_contents = await retrieve_media_content(json_post);
 
     const style = `style="width: ${$("#post_width").val()}%;"`;
 
     let content = "";
     // generate media element
-    if (visual_contents.type.includes("video")) {
+    if (media_contents.type.includes("video")) {
         content = `<video ${style} autoplay muted controls loop><source src="${await blobToBase64(
-            visual_contents
+            media_contents
         )}">Your browser does not support the video tag.</video>`;
     } else {
         // assume image mime type
-        content = `<img src="${await blobToBase64(visual_contents)}"  ${style}></img>`;
+        content = `<img src="${await blobToBase64(media_contents)}"  ${style}></img>`;
     }
 
     // set html output
     browser_target.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
+}
+
+// returns a typed media blob
+async function retrieve_media_content(json_post) {
+    let zip_file_nr = 0;
+    if (json_post["use_zip_file_nr"] != undefined) {
+        zip_file_nr = json_post["use_zip_file_nr"];
+    }
+
+    const filename = json_post.hash_filename;
+    const cache_index = zip_file_nr + filename;
+
+    // if already cached, return immediately
+    if (Object.keys(decrypted_media_cache).includes(cache_index)) {
+        return decrypted_media_cache[cache_index][1];
+    }
+
+    // regenerate blob from zip
+    let media_contents = await zip_file_array[zip_file_nr].files[filename].async("blob");
+    media_contents = media_contents.slice(0, media_contents.size, json_post.mime_type); // write original mime type back into
+    media_contents = await decrypt_blob(media_contents, json_post["iv_string"] ?? "");
+
+    // element not in cache. Add before returning
+    add_element_to_decrypted_media_cache(cache_index, media_contents);
+
+    return media_contents;
+}
+
+function add_element_to_decrypted_media_cache(cache_index, media_blob) {
+    // add element
+    decrypted_media_cache[cache_index] = [0, media_blob]; // [age, media_blob]
+
+    // age all entries
+    for (const media_key in decrypted_media_cache) {
+        decrypted_media_cache[media_key][0]++;
+    }
+
+    // delete too old entries
+    Object.keys(decrypted_media_cache).forEach((media_key) => {
+        if (decrypted_media_cache[media_key][0] > 8) {
+            delete decrypted_media_cache[media_key];
+        }
+    });
 }
 
 function reset_display() {

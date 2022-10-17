@@ -71,6 +71,7 @@ async function read_in_zip_file(file, index) {
                 json[j].direct_link = await decrypt_text(json[j].direct_link, json[j]["iv_string"] ?? "");
                 json[j].title = await decrypt_text(json[j].title, json[j]["iv_string"] ?? "");
                 json[j].media_url = await decrypt_text(json[j].media_url, json[j]["iv_string"] ?? "");
+                json[j].subreddit = await decrypt_text(json[j].subreddit ?? "", json[j]["iv_string"] ?? "");
             }
         }
 
@@ -106,6 +107,7 @@ async function display_post(json_post, zip_file_nr = 0) {
     let title = json_post.title;
     let author = json_post.author;
     let link = json_post.direct_link;
+    let subreddit = json_post.subreddit ?? "";
 
     // regenerate blob
     let visual_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
@@ -126,7 +128,7 @@ async function display_post(json_post, zip_file_nr = 0) {
     }
 
     // set html output
-    browser_target.innerHTML = `<h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
+    browser_target.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
 }
 
 function reset_display() {

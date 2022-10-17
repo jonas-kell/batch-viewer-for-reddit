@@ -68,6 +68,7 @@ async function process_posts(api_url = "") {
                 author: post["author"] ?? "",
                 direct_link: `https://redd.it/${post["name"]}`,
                 title: post["title"] ?? "",
+                subreddit: post["subreddit_name_prefixed"] ?? "",
                 media_url: md_url,
                 series_index: archived_count,
             });
@@ -115,6 +116,7 @@ async function process_posts(api_url = "") {
             output_array[i].author = await encrypt_text(output_array[i].author, output_array[i]["iv_string"] ?? "");
             output_array[i].direct_link = await encrypt_text(output_array[i].direct_link, output_array[i]["iv_string"] ?? "");
             output_array[i].title = await encrypt_text(output_array[i].title, output_array[i]["iv_string"] ?? "");
+            output_array[i].subreddit = await encrypt_text(output_array[i].subreddit, output_array[i]["iv_string"] ?? "");
             output_array[i].media_url = await encrypt_text(output_array[i].media_url, output_array[i]["iv_string"] ?? "");
         }
     }

@@ -25,7 +25,7 @@ $(document).ready(() => {
 });
 
 function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
-    var start_with_specific_post = start_with_post != "" && start_with_post.length == 6;
+    var start_with_specific_post = start_with_post != "" && (start_with_post.length == 6 || start_with_post.length == 7); // funny, this changed recently and broke the app
 
     console.log(
         `URL for scraping subreddit "${subreddit_name}" for next set of posts` +

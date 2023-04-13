@@ -75,7 +75,7 @@
         <br />
         <hr />
 
-        <div id="session_properties" hidden>
+        <div id="file_pickers" hidden>
             Open (basically unlimited large) single zip files (chrome only 'File System Access API'). <br />
             <button id="open_zip">Open Zip</button>
             <br />
@@ -83,6 +83,7 @@
             Open multiple zip files, that can not be larger than around 50mb each (hopefully every browser and platform). <br />
             <input type="file" id="zip_filepicker" name="zip_filepicker" multiple />
         </div>
+        <ul id="loaded_files"></ul>
     </body>
 
     <script src="session.js"></script>

@@ -28,18 +28,46 @@ $(document).ready(() => {
         update_session_display();
     });
 
+    $("#zip_filepicker").on("change", async function (evt) {
+        const dataDirHandle = await getCurrentSessionPostsDirectoryHandle();
+
+        var files = evt.target.files;
+        const nr_zip_files = files.length;
+
+        // read in zip files
+        for (var i = 0; i < nr_zip_files; i++) {
+            const filename = files[i].name;
+            console.log(files[i]);
+
+            if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
+                const dataFileHandle = await dataDirHandle.getFileHandle(filename, {
+                    create: true,
+                });
+                const writable = await dataFileHandle.createWritable();
+                await writable.write(files[i]);
+                await writable.close();
+            } else {
+                console.error("Data file not storable: " + filename);
+            }
+        }
+
+        update_session_display();
+    });
+
     update_session_display();
 });
 
 async function update_session_display() {
     const sessionDirHandle = await getSessionDirectoryHandle();
     let list = $("#session_list");
-    let properties = $("#session_properties");
+    let pickers = $("#file_pickers");
+    let files_list = $("#loaded_files");
 
     // reset sessions array
     list.empty();
+    files_list.empty();
     sessionsMeta = {};
-    properties.hide();
+    pickers.hide();
 
     // rebuild sessions array
     for await (const entry of sessionDirHandle.values()) {
@@ -72,7 +100,16 @@ async function update_session_display() {
 
             // render file manager
             if (parsedSession.name == selected_session_name) {
-                properties.show();
+                // show file pickers
+                pickers.show();
+
+                // update the content list
+                const dataDirHandle = await getCurrentSessionPostsDirectoryHandle();
+                for await (const dateEntry of dataDirHandle.values()) {
+                    if ((dateEntry.kind = "file" && dateEntry.name.match(/[a-z]+_\d+(_encrypted)?.zip/g))) {
+                        files_list.append("<li>" + dateEntry.name + "</li>");
+                    }
+                }
             }
 
             // store results
@@ -100,6 +137,9 @@ function update_event_listeners() {
 
         if (confirmed) {
             await sessionDirHandle.removeEntry(fileNameToDelete);
+            const dataDirHandle = await getCurrentSessionPostsDirectoryHandle();
+            await (await navigator.storage.getDirectory()).removeEntry(dataDirHandle.name, { recursive: true });
+
             console.log(`Deleted Session ${fileNameToDelete}`);
 
             update_session_display();
@@ -126,6 +166,15 @@ function update_event_listeners() {
 async function getSessionDirectoryHandle() {
     const originPrivateFileSystem = await navigator.storage.getDirectory();
     const sessionDirHandle = await originPrivateFileSystem.getDirectoryHandle("session-storage", { create: true });
+
+    return sessionDirHandle;
+}
+
+async function getCurrentSessionPostsDirectoryHandle() {
+    const originPrivateFileSystem = await navigator.storage.getDirectory();
+    const sessionDirHandle = await originPrivateFileSystem.getDirectoryHandle(selected_session_name.split(".")[0], {
+        create: true,
+    });
 
     return sessionDirHandle;
 }

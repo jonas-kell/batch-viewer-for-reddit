@@ -13,6 +13,8 @@ urlsToCache = [
     "merge.js",
     "manage.html",
     "manage.js",
+    "session.html",
+    "session.js",
     "hash.js",
     "assets/favicons/apple-touch-icon.png",
     "assets/favicons/favicon-16x16.png",

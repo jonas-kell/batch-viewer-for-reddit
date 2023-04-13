@@ -7,3 +7,15 @@
 /* It targets only the app used with a system icon in all mode */
 @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
 }
+
+table {
+    border: 2px black solid;
+    border-collapse: collapse;
+    min-width: 100%;
+    overflow: scroll;
+}
+
+td,
+th {
+    border: 1px black solid;
+}

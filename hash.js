@@ -46,7 +46,7 @@ function encryption_on() {
     }
 }
 
-function set_key_to_use(input_id, button_id) {
+async function set_key_to_use(input_id, button_id) {
     $("#" + String(button_id)).attr("disabled", "disabled");
     var password = String(document.getElementById(input_id).value);
 
@@ -61,10 +61,10 @@ function set_key_to_use(input_id, button_id) {
         $("#" + String(button_id)).attr("disabled", null);
     } else {
         const enc = new TextEncoder();
-        crypto.subtle
+        await crypto.subtle
             .importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"])
-            .then((keyFromPassphrase) => {
-                crypto.subtle
+            .then(async (keyFromPassphrase) => {
+                await crypto.subtle
                     .deriveKey(
                         {
                             name: "PBKDF2",

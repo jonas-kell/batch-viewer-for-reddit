@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- meta -->
+        <meta charset="utf-8" />
+        <title>Batch Viewer for Reddit</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta
+            name="description"
+            content="Author: J.Kell,
+            Tool to scrape reddit posts for offline viewing.
+            "
+        />
+        <meta name="theme-color" content="red" media="(prefers-color-scheme: dark)" />
+
+        <!-- js -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+            integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
+        <script src="hash.js"></script>
+
+        <!-- links -->
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="manifest" href="app.webmanifest" />
+
+        <!-- favicons -->
+        <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png" />
+        <link rel="mask-icon" href="assets/favicons/safari-pinned-tab.svg" color="#5bbad5" />
+        <meta name="msapplication-TileColor" content="#da532c" />
+    </head>
+    <body>
+        <a href="./index.html"><h1>Batch Viewer for Reddit</h1></a>
+
+        <h2>Create or load Session</h2>
+
+        <br />
+        <br />
+        Session En-/Decryption key (If session is is is intended to be encrypted, this needs to be set):<br />
+        <input type="password" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
+        <button id="update_decryption_key">Update</button>
+
+        <br />
+        <br />
+        Locally stored Sessions:
+        <button id="create_session" style="margin-left: 3em">Create</button>
+
+        <br />
+        <br />
+        <div style="width: 100%; text-align: center">
+            <div style="width: 90%; margin: auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Encrypted</th>
+                            <th>Number Files</th>
+                            <th>Number Posts</th>
+                            <th>Total Size</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="session_list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <br />
+        <br />
+        <hr />
+
+        <div id="session_properties" hidden>
+            Open (basically unlimited large) single zip files (chrome only 'File System Access API'). <br />
+            <button id="open_zip">Open Zip</button>
+            <br />
+            <br />
+            Open multiple zip files, that can not be larger than around 50mb each (hopefully every browser and platform). <br />
+            <input type="file" id="zip_filepicker" name="zip_filepicker" multiple />
+        </div>
+    </body>
+
+    <script src="session.js"></script>
+</html>

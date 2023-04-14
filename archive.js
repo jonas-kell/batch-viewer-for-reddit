@@ -113,12 +113,7 @@ async function process_posts(api_url = "") {
     // encrypt lookup json
     if (encryption_on()) {
         for (let i = 0; i < output_array.length; i++) {
-            output_array[i].id = await encrypt_text(output_array[i].id, output_array[i]["iv_string"] ?? "");
-            output_array[i].author = await encrypt_text(output_array[i].author, output_array[i]["iv_string"] ?? "");
-            output_array[i].direct_link = await encrypt_text(output_array[i].direct_link, output_array[i]["iv_string"] ?? "");
-            output_array[i].title = await encrypt_text(output_array[i].title, output_array[i]["iv_string"] ?? "");
-            output_array[i].subreddit = await encrypt_text(output_array[i].subreddit, output_array[i]["iv_string"] ?? "");
-            output_array[i].media_url = await encrypt_text(output_array[i].media_url, output_array[i]["iv_string"] ?? "");
+            output_array[i] = await encryptPostObject(output_array[i]);
         }
     }
     zip.file("contents.json", JSON.stringify(output_array));

@@ -121,8 +121,8 @@ async function decrypt_text(text, iv_string) {
             hex_string_to_typed_array(text)
         );
     } catch (error) {
-        console.error("error while decrypting text. Probably used the wrong key");
-        return "Decryption Error";
+        console.error("Error while decrypting text. Probably used the wrong key");
+        throw new Error("Decryption Error");
     }
 
     let dec = new TextDecoder();

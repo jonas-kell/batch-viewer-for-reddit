@@ -73,19 +73,36 @@ async function recreateSessionsMeta() {
             // parse info
             let parsedSession = JSON.parse(await file.text());
             const is_encrypted = parsedSession.encrypted;
-            const iv_string = parsedSession.iv_string;
-            const can_be_decrypted =
-                !is_encrypted ||
-                (is_encrypted &&
-                    encryption_on() &&
-                    (await decrypt_text(parsedSession.encryption_test, iv_string)) != "Decryption Error");
+            const session_iv_string = parsedSession.iv_string;
+            let throws_error = false;
+            try {
+                await decrypt_text(parsedSession.encryption_test, session_iv_string);
+            } catch (error) {
+                throws_error = true;
+            }
+            const can_be_decrypted = !is_encrypted || (is_encrypted && encryption_on() && !throws_error);
+
+            // decrypt posts
+            let posts = {};
+            if (encryption_on() && can_be_decrypted && is_encrypted) {
+                // need to decrypt
+                for (const post_id_enc in parsedSession.posts) {
+                    const post_id = await decrypt_text(post_id_enc, session_iv_string);
+                    const post_object = JSON.parse(await decrypt_text(parsedSession.posts[post_id_enc], session_iv_string));
+                    posts[post_id] = await decryptPostObject(post_object);
+                }
+            } else {
+                // just do a copy
+                posts = JSON.parse(JSON.stringify(parsedSession.posts));
+            }
 
             // store results
             sessionsMeta[parsedSession.name] = {
                 name: parsedSession.name,
                 is_encrypted: is_encrypted,
-                iv_string: iv_string,
+                iv_string: session_iv_string,
                 can_be_decrypted: can_be_decrypted,
+                posts: posts,
                 session: parsedSession,
             };
         }
@@ -107,7 +124,7 @@ async function createSession() {
         `{"name": "${filename}", "encrypted": ${encryption_on()}, "encryption_test": "${await encrypt_text(
             String(Math.random()),
             iv_string
-        )}", "iv_string": "${iv_string}", "posts": []}`
+        )}", "iv_string": "${iv_string}", "posts": {}}`
     );
     await writable.close();
 }
@@ -125,11 +142,45 @@ async function deleteSession(fileNameToDelete) {
 async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     const filename = file.name;
     const dataDirHandle = await getSessionPostsDirectoryHandle();
+
+    // check if can be processed
+    let session = getSelectedSession();
+    if (session == null) {
+        toastr.error("No session selected, aborting");
+        return;
+    }
+    let filenames = await getCurrentSessionDataFilesNames();
+    if (filenames.includes(filename)) {
+        toastr.warning("Already included file: " + filename);
+        return;
+    }
+    const file_encrypted = filename.includes("_encrypted");
+    const encryption_enabled = encryption_on();
+    if (encryption_enabled != file_encrypted) {
+        toastr.error("Encryption mismatch for file: " + filename);
+        return;
+    }
+
+    // process meta
+    let meta_info = null;
+    try {
+        meta_info = await readInZipFile(file);
+    } catch (error) {
+        toastr.error("Decryption Key mismatch for file: " + filename);
+        return;
+    }
+
+    // append posts
+    for (const post of meta_info) {
+        session.posts[post.id] = post;
+    }
+    await storeCurrentSessionToOpfs();
+
+    // store file in opfs
     const dataFileHandle = await dataDirHandle.getFileHandle(filename, {
         create: true,
     });
     const writable = await dataFileHandle.createWritable();
-
     await writable.write(file);
     await writable.close();
 }
@@ -149,4 +200,90 @@ async function getCurrentSessionDataFilesNames() {
     }
 
     return res;
+}
+
+async function storeCurrentSessionToOpfs() {
+    let session = getSelectedSession();
+    if (session == null) {
+        throw new Error("No Session selected");
+    }
+
+    const filename = getSelectedSessionName();
+    const sessionDirHandle = await getSessionDirectoryHandle();
+    const sessionFileHandle = await sessionDirHandle.getFileHandle(filename);
+    const writable = await sessionFileHandle.createWritable();
+    const session_iv_string = session.iv_string;
+
+    if (encryption_on()) {
+        // encrypt posts for storage
+        session.session.posts = {};
+
+        for (const post_id_unenc in session.posts) {
+            const post_unenc = session.posts[post_id_unenc];
+
+            const post_id_enc = await encrypt_text(post_id_unenc, session_iv_string);
+            const post_enc = await encrypt_text(JSON.stringify(await encryptPostObject(post_unenc)), session_iv_string);
+
+            session.session.posts[post_id_enc] = post_enc;
+        }
+    } else {
+        session.session.posts = session.posts; // set to the overwritten version
+    }
+
+    await writable.write(JSON.stringify(session.session));
+    await writable.close();
+
+    toastr.success("Session data stored to File System");
+}
+
+async function readInZipFile(file) {
+    let post_json = [];
+
+    await JSZip.loadAsync(file).then(async function (zip) {
+        let contents = zip.files["contents.json"];
+        let json = JSON.parse(await contents.async("text"));
+
+        // decrypt stuff
+        if (encryption_on()) {
+            for (let j = 0; j < json.length; j++) {
+                json[j] = await decryptPostObject(json[j]);
+            }
+        }
+
+        for (let j = 0; j < json.length; j++) {
+            post_json.push(json[j]);
+        }
+    });
+
+    return post_json;
+}
+
+async function decryptPostObject(post) {
+    let result_post = {};
+
+    result_post["iv_string"] = post["iv_string"];
+    for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
+        let result = "";
+        try {
+            result = await decrypt_text(post[keyword], post["iv_string"] ?? "");
+        } catch (error) {
+            if (keyword == "id") {
+                throw new Error("Current Key not suited for file decryption");
+            }
+        }
+        result_post[keyword] = result;
+    }
+
+    return result_post;
+}
+
+async function encryptPostObject(post) {
+    let result_post = {};
+
+    result_post["iv_string"] = post["iv_string"];
+    for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
+        result_post[keyword] = await encrypt_text(post[keyword], post["iv_string"] ?? "");
+    }
+
+    return result_post;
 }

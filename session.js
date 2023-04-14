@@ -72,7 +72,7 @@ async function update_session_display() {
                 <td style="${style}">${parsedSession.is_encrypted ? "Yes" : "No"} ${
             parsedSession.is_encrypted && parsedSession.can_be_decrypted ? "Decr." : ""
         }</td>
-                <td style="${style}">${parsedSession.session.posts.length}</td>
+                <td style="${style}">${Object.keys(parsedSession.posts).length}</td>
                 <td style="${style}"></td>
                 <td style="${style}"></td>
                 <td style="${style}">${

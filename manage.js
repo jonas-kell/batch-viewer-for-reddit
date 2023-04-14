@@ -66,31 +66,6 @@ $(document).ready(() => {
     });
 });
 
-async function read_in_zip_file(file, index) {
-    await JSZip.loadAsync(file).then(async function (zip) {
-        zip_file_array[index] = zip; // push directly into permanent zip file storage
-
-        let contents = zip.files["contents.json"];
-        let json = JSON.parse(await contents.async("text"));
-
-        if (encryption_on()) {
-            for (let j = 0; j < json.length; j++) {
-                json[j].id = await decrypt_text(json[j].id, json[j]["iv_string"] ?? "");
-                json[j].author = await decrypt_text(json[j].author, json[j]["iv_string"] ?? "");
-                json[j].direct_link = await decrypt_text(json[j].direct_link, json[j]["iv_string"] ?? "");
-                json[j].title = await decrypt_text(json[j].title, json[j]["iv_string"] ?? "");
-                json[j].media_url = await decrypt_text(json[j].media_url, json[j]["iv_string"] ?? "");
-                json[j].subreddit = await decrypt_text(json[j].subreddit ?? "", json[j]["iv_string"] ?? "");
-            }
-        }
-
-        for (let j = 0; j < json.length; j++) {
-            json[j]["use_zip_file_nr"] = index; // cache in what zip file the image can be found
-            control_json.push(json[j]); // append directly to permanent control array
-        }
-    });
-}
-
 async function select_post(number) {
     if (number >= 0 && number < control_json.length) {
         // ok region

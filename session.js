@@ -12,6 +12,22 @@ $(document).ready(() => {
         update_session_display();
     });
 
+    document.getElementById("open_zip").addEventListener("click", async () => {
+        let fileHandle;
+        [fileHandle] = await window.showOpenFilePicker();
+        const file = await fileHandle.getFile();
+        const filename = file.name;
+
+        if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
+            await storeDataFileInSelectedSessionsOpfsFolder(file);
+            toastr.info("Read in file: " + filename);
+        } else {
+            toastr.error("Data file not storable: " + filename);
+        }
+
+        update_session_display();
+    });
+
     $("#zip_filepicker").on("change", async function (evt) {
         var files = evt.target.files;
         const nr_zip_files = files.length;

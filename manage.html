@@ -29,6 +29,7 @@
         ></script>
         <script src="hash.js"></script>
         <script src="opfs.js"></script>
+        <script src="sessionselectbuttons.js"></script>
 
         <!-- links -->
         <link rel="stylesheet" href="styles.css" />
@@ -52,28 +53,28 @@
         <a href="./index.html"><h1>Batch Viewer for Reddit</h1></a>
 
         <h2>Display Contents</h2>
-        Open (basically unlimited large) single zip files (chrome only 'File System Access API'). <br />
-        <button id="open_zip">Open Zip</button>
-        <br />
-        <br />
-        Open multiple zip files, that can not be larger than around 50mb each (hopefully every browser and platform). <br />
-        <input type="file" id="zip_filepicker" name="zip_filepicker" multiple />
-
-        <br />
-        <br />
-        Randomized import: <br />
-        <input type="checkbox" id="randomize" checked />
-
-        <br />
-        <br />
-        Image Width: <br />
-        <input type="number" id="post_width" value="100" min="10" max="100" step="10"/>
-
-        <br />
         <br />
         Decryption key (If input is encrypted, this needs to be set):<br />
         <input type="password" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
         <button id="update_decryption_key">Update</button>
+
+        <br />
+        <br />
+        Which Session to load:
+        <fieldset>
+            <input type="radio" id="default" name="sessions_select" value="default" class="selects_session" checked />
+            <label for="default">Please choose</label>
+            <br />
+            <div id="sessions_radio_buttons"></div>
+        </fieldset>
+
+        <br />
+        <br />
+        Randomized import:
+        <input type="checkbox" id="randomize" checked />
+        &nbsp&nbsp Image Width:
+        <input type="number" id="post_width" value="100" min="10" max="100" step="10"/>
+        <button id="load_files_from_session" style="display: none;"></button>
 
         <br />
         <br />

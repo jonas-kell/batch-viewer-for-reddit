@@ -38,10 +38,10 @@ function selectSession(session_name = "") {
             toastr.error("Encrypted session can not be selected without key");
         }
     } else {
-        if (session_name != "download") {
+        if (session_name != "default") {
             toastr.error("Key not found in sessionsMeta cache");
         } else {
-            toastr.success("Selected to download");
+            toastr.success("Selected default operation");
         }
     }
     return false;
@@ -71,7 +71,7 @@ async function recreateSessionsMeta() {
 
     // rebuild sessions array
     for await (const entry of sessionDirHandle.values()) {
-        if ((entry.kind = "file" && entry.name.match(/Session_\d*.json/g))) {
+        if ((entry.kind = "file" && entry.name.match(/Session_\d*(_encrypted)?.json/g))) {
             const file = await entry.getFile();
 
             // parse info
@@ -117,7 +117,7 @@ async function recreateSessionsMeta() {
 }
 
 async function createSession() {
-    const filename = "Session_" + String(Date.now()) + ".json";
+    const filename = "Session_" + String(Date.now()) + (encryption_on() ? "_encrypted" : "") + ".json";
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(filename, {
         create: true,
@@ -176,7 +176,8 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     }
 
     // append posts
-    for (const post of meta_info) {
+    for (let post of meta_info) {
+        post.zip_file_name = filename; // remember what file the post is from
         session.posts[post.id] = post;
     }
 
@@ -288,7 +289,14 @@ async function readInZipFile(file) {
 async function decryptPostObject(post) {
     let result_post = {};
 
-    result_post["iv_string"] = post["iv_string"];
+    // clone
+    for (const keyword of ["hash_filename", "iv_string", "mime_type", "series_index", "zip_file_name"]) {
+        if (post[keyword] != undefined) {
+            result_post[keyword] = post[keyword];
+        }
+    }
+
+    // decrypt
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
         let result = "";
         try {
@@ -307,7 +315,14 @@ async function decryptPostObject(post) {
 async function encryptPostObject(post) {
     let result_post = {};
 
-    result_post["iv_string"] = post["iv_string"];
+    // clone
+    for (const keyword of ["hash_filename", "iv_string", "mime_type", "series_index", "zip_file_name"]) {
+        if (post[keyword] != undefined) {
+            result_post[keyword] = post[keyword];
+        }
+    }
+
+    // decrypt
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
         result_post[keyword] = await encrypt_text(post[keyword], post["iv_string"] ?? "");
     }

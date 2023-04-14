@@ -11,9 +11,11 @@ $(document).ready(async () => {
     $(".selects_session").on("click", function () {
         let res = selectSession($(this).attr("value"));
 
-        if (!res && $(this).attr("value") != "download") {
-            selectSession("download");
-            $("#download").prop("checked", true);
+        if (!res && $(this).attr("value") != "default") {
+            selectSession("default");
+            $("#default").prop("checked", true);
         }
+
+        $("#load_files_from_session").click();
     });
 });

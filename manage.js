@@ -1,48 +1,13 @@
-let control_json = [];
-let zip_file_array = [];
 let rendered_media_cache = {};
 
 $(document).ready(() => {
-    document.getElementById("update_decryption_key").addEventListener("click", () => {
-        set_key_to_use("decryption_key", "update_decryption_key");
+    document.getElementById("update_decryption_key").addEventListener("click", async () => {
+        await set_key_to_use("decryption_key", "update_decryption_key");
+        await recreateSessionsMeta();
     });
 
-    document.getElementById("open_zip").addEventListener("click", async () => {
-        let fileHandle;
-        [fileHandle] = await window.showOpenFilePicker();
-        const file = await fileHandle.getFile();
-
-        // reset storage containers
-        zip_file_array = [1];
-        control_json = [];
+    $(document).on("click", "#load_files_from_session", () => {
         clear_rendered_media_cache();
-
-        // read in zip file
-        await read_in_zip_file(file, 0);
-
-        // sort or randomize order
-        reorder_control_array();
-
-        // reset display
-        reset_display();
-    });
-
-    $("#zip_filepicker").on("change", async function (evt) {
-        var files = evt.target.files;
-        const nr_zip_files = files.length;
-
-        // reset storage containers
-        zip_file_array = Array.from(Array(nr_zip_files).keys());
-        control_json = [];
-        clear_rendered_media_cache();
-
-        // read in zip files
-        for (var i = 0; i < nr_zip_files; i++) {
-            await read_in_zip_file(files[i], i);
-        }
-
-        // sort or randomize order
-        reorder_control_array();
 
         // reset display
         reset_display();
@@ -67,7 +32,7 @@ $(document).ready(() => {
 });
 
 async function select_post(number) {
-    if (number >= 0 && number < control_json.length) {
+    if (number >= 0 && number < getNumberOfPosts()) {
         // ok region
     } else {
         number = 0;
@@ -77,14 +42,14 @@ async function select_post(number) {
         $(element).val(number);
     });
 
-    await display_post(control_json[number]);
+    await display_post(getPostJson(number));
 
     // cache next posts asyncronously in the background
     const time_difference = 400;
     const number_of_posts_to_cache = 3;
     function cache_in_background(post_nr, offset) {
         setTimeout(() => {
-            render_post(control_json[(post_nr + offset) % control_json.length]);
+            render_post(getPostJson((post_nr + offset) % getNumberOfPosts()));
         }, time_difference * offset);
     }
     for (let i = 1; i <= number_of_posts_to_cache; i++) {
@@ -224,28 +189,22 @@ function blobToBase64(blob) {
     });
 }
 
-function shuffle(array) {
-    const newArray = [...array];
-    const length = newArray.length;
+function getPostJson(index) {
+    let session = getSelectedSession();
 
-    for (let start = 0; start < length; start++) {
-        const randomPosition = Math.floor((newArray.length - start) * Math.random());
-        const randomItem = newArray.splice(randomPosition, 1);
-
-        newArray.push(...randomItem);
+    if (session == null) {
+        return null;
+    } else {
+        return session.posts[index];
     }
-
-    return newArray;
 }
 
-function reorder_control_array() {
-    // sort by series index, as order might have been changed
-    if (document.getElementById("randomize").checked) {
-        // random order
-        control_json = shuffle(control_json);
+function getNumberOfPosts() {
+    let session = getSelectedSession();
+
+    if (session == null) {
+        return 0;
     } else {
-        control_json = control_json.sort(function (a, b) {
-            return a.series_index - b.series_index;
-        });
+        return session.posts.length;
     }
 }

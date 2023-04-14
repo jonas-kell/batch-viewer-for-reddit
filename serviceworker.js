@@ -16,6 +16,7 @@ urlsToCache = [
     "session.html",
     "session.js",
     "hash.js",
+    "opfs.js",
     "assets/favicons/apple-touch-icon.png",
     "assets/favicons/favicon-16x16.png",
     "assets/favicons/favicon-32x32.png",

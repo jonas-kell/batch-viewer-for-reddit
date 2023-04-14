@@ -48,7 +48,11 @@ function selectSession(session_name = "") {
 }
 
 function getSelectedSession() {
-    let res = sessionsMeta[selected_session_name];
+    return getSession(selected_session_name);
+}
+
+function getSession(session_name) {
+    let res = sessionsMeta[session_name];
 
     if (res != undefined) {
         return res;
@@ -185,21 +189,44 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     await writable.close();
 }
 
-async function getCurrentSessionDataFilesNames() {
-    let session = getSelectedSession();
+async function getSessionDataFilesMeta(session_name) {
+    let session = getSession(session_name);
     if (session == null) {
-        return [];
+        return {};
     }
 
-    let res = [];
-    const dataDirHandle = await getSessionPostsDirectoryHandle();
-    for await (const dateEntry of dataDirHandle.values()) {
-        if ((dateEntry.kind = "file" && dateEntry.name.match(/[a-z]+_\d+(_encrypted)?.zip/g))) {
-            res.push(dateEntry.name);
+    let res = {};
+    const dataDirHandle = await getSessionPostsDirectoryHandle(session_name);
+    for await (const dataEntry of dataDirHandle.values()) {
+        if ((dataEntry.kind = "file" && dataEntry.name.match(/[a-z]+_\d+(_encrypted)?.zip/g))) {
+            res[dataEntry.name] = { name: dataEntry.name, size: 0 }; // TODO store file size
         }
     }
 
     return res;
+}
+
+async function getSessionDataFilesNames(session_name) {
+    return Object.keys(await getSessionDataFilesMeta(session_name));
+}
+
+async function getCurrentSessionDataFilesNames() {
+    return await getSessionDataFilesNames(getSelectedSessionName());
+}
+
+async function getSessionNumberOfDataFileNames(session_name) {
+    return (await getSessionDataFilesNames(session_name)).length;
+}
+
+async function getSessionDataFileCompleteSize(session_name) {
+    const meta = await getSessionDataFilesMeta(session_name);
+    let size = 0;
+
+    for (const file_name in meta) {
+        size += meta[file_name].size;
+    }
+
+    return size;
 }
 
 async function storeCurrentSessionToOpfs() {

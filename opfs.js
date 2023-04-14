@@ -107,6 +107,7 @@ async function recreateSessionsMeta() {
                 iv_string: session_iv_string,
                 can_be_decrypted: can_be_decrypted,
                 posts: posts,
+                file_meta: JSON.parse(JSON.stringify(parsedSession.file_meta)),
                 session: parsedSession,
             };
         }
@@ -128,7 +129,7 @@ async function createSession() {
         `{"name": "${filename}", "encrypted": ${encryption_on()}, "encryption_test": "${await encrypt_text(
             String(Math.random()),
             iv_string
-        )}", "iv_string": "${iv_string}", "posts": {}}`
+        )}", "iv_string": "${iv_string}", "posts": {}, "file_meta": {}}`
     );
     await writable.close();
 }
@@ -178,7 +179,6 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     for (const post of meta_info) {
         session.posts[post.id] = post;
     }
-    await storeCurrentSessionToOpfs();
 
     // store file in opfs
     const dataFileHandle = await dataDirHandle.getFileHandle(filename, {
@@ -187,6 +187,12 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     const writable = await dataFileHandle.createWritable();
     await writable.write(file);
     await writable.close();
+
+    // get and store file meta
+    const reloaded_file = await dataFileHandle.getFile();
+    session.file_meta[filename] = { size: reloaded_file.size, name: filename };
+
+    await storeCurrentSessionToOpfs();
 }
 
 async function getSessionDataFilesMeta(session_name) {
@@ -195,15 +201,7 @@ async function getSessionDataFilesMeta(session_name) {
         return {};
     }
 
-    let res = {};
-    const dataDirHandle = await getSessionPostsDirectoryHandle(session_name);
-    for await (const dataEntry of dataDirHandle.values()) {
-        if ((dataEntry.kind = "file" && dataEntry.name.match(/[a-z]+_\d+(_encrypted)?.zip/g))) {
-            res[dataEntry.name] = { name: dataEntry.name, size: 0 }; // TODO store file size
-        }
-    }
-
-    return res;
+    return session.file_meta;
 }
 
 async function getSessionDataFilesNames(session_name) {
@@ -256,6 +254,8 @@ async function storeCurrentSessionToOpfs() {
     } else {
         session.session.posts = session.posts; // set to the overwritten version
     }
+
+    session.session.file_meta = session.file_meta; // set to the overwritten version
 
     await writable.write(JSON.stringify(session.session));
     await writable.close();
@@ -313,4 +313,8 @@ async function encryptPostObject(post) {
     }
 
     return result_post;
+}
+
+function sizeToString(size) {
+    return Math.round(size * 1e-3) * 1e-3 + "MB";
 }

@@ -74,7 +74,7 @@ async function update_session_display() {
         }</td>
                 <td style="${style}">${Object.keys(parsedSession.posts).length}</td>
                 <td style="${style}">${await getSessionNumberOfDataFileNames(parsedSession.name)}</td>
-                <td style="${style}">${await getSessionDataFileCompleteSize(parsedSession.name)}</td>
+                <td style="${style}">${sizeToString(await getSessionDataFileCompleteSize(parsedSession.name))}</td>
                 <td style="${style}">${
             parsedSession.can_be_decrypted
                 ? `<button class="select_session" file_name="${parsedSession.name}">Select</button>`

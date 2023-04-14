@@ -75,7 +75,7 @@ async function display_post(json_post) {
 // caches the result
 async function render_post(json_post) {
     const filename = json_post.hash_filename;
-    const cache_index = (json_post["use_zip_file_nr"] ?? "") + filename;
+    const cache_index = (json_post.zip_file_name ?? "") + filename;
 
     // if already cached, return immediately
     if (Object.keys(rendered_media_cache).includes(cache_index)) {
@@ -158,15 +158,18 @@ function clear_rendered_media_cache() {
 
 // returns a typed media blob
 async function retrieve_media_content(json_post) {
-    let zip_file_nr = 0;
-    if (json_post["use_zip_file_nr"] != undefined) {
-        zip_file_nr = json_post["use_zip_file_nr"];
-    }
+    // load zip from file system
+    const dataDirHandle = await getSessionPostsDirectoryHandle();
+    const zipFileHandle = await dataDirHandle.getFileHandle(json_post.zip_file_name);
+    const loaded_zip_file = await zipFileHandle.getFile();
 
     // regenerate blob from zip
-    let media_contents = await zip_file_array[zip_file_nr].files[json_post.hash_filename].async("blob");
+    let media_contents = null;
+    await JSZip.loadAsync(loaded_zip_file).then(async function (zip) {
+        media_contents = await zip.files[json_post.hash_filename].async("blob");
+    });
     media_contents = media_contents.slice(0, media_contents.size, json_post.mime_type); // write original mime type back into
-    media_contents = await decrypt_blob(media_contents, json_post["iv_string"] ?? "");
+    media_contents = await decrypt_blob(media_contents, json_post.iv_string ?? "");
 
     return media_contents;
 }
@@ -174,11 +177,13 @@ async function retrieve_media_content(json_post) {
 function reset_display() {
     // set max number display
     $(".max_number").each((index, element) => {
-        $(element).html(control_json.length - 1);
+        $(element).html(getNumberOfPosts() - 1);
     });
 
     // get image files from zip and append to display
-    select_post(0);
+    if (getSelectedSession() != null) {
+        select_post(0);
+    }
 }
 
 function blobToBase64(blob) {
@@ -195,7 +200,7 @@ function getPostJson(index) {
     if (session == null) {
         return null;
     } else {
-        return session.posts[index];
+        return session.posts[Object.keys(session.posts)[index]];
     }
 }
 
@@ -205,6 +210,6 @@ function getNumberOfPosts() {
     if (session == null) {
         return 0;
     } else {
-        return session.posts.length;
+        return Object.keys(session.posts).length;
     }
 }

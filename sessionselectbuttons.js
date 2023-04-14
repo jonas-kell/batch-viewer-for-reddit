@@ -16,6 +16,6 @@ $(document).ready(async () => {
             $("#default").prop("checked", true);
         }
 
-        $("#load_files_from_session").click();
+        $("#load_files_from_session").click(); // trigger display loading if this hidden button is present on the page
     });
 });

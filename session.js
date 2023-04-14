@@ -89,8 +89,8 @@ async function update_session_display() {
             pickers.show();
 
             // update the content list
-            for (const name of await getCurrentSessionDataFilesNames()) {
-                files_list.append("<li>" + name + "</li>");
+            for (const file_meta of Object.values(await getSessionDataFilesMeta(getSelectedSessionName()))) {
+                files_list.append("<li><b>" + file_meta.name + "</b> (" + sizeToString(file_meta.size) + ")</li>");
             }
         }
 

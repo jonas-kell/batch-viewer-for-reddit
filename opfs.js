@@ -316,5 +316,5 @@ async function encryptPostObject(post) {
 }
 
 function sizeToString(size) {
-    return Math.round(size * 1e-3) * 1e-3 + "MB";
+    return (size * 1e-6).toFixed(3) + " MB";
 }

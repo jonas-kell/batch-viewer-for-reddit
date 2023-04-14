@@ -38,7 +38,11 @@ function selectSession(session_name = "") {
             toastr.error("Encrypted session can not be selected without key");
         }
     } else {
-        toastr.error("Key not found in sessionsMeta cache");
+        if (session_name != "download") {
+            toastr.error("Key not found in sessionsMeta cache");
+        } else {
+            toastr.success("Selected to download");
+        }
     }
     return false;
 }

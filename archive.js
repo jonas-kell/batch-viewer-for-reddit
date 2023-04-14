@@ -19,21 +19,9 @@ $(document).ready(async () => {
         process_posts(api_url);
     });
 
-    document.getElementById("update_encryption_key").addEventListener("click", () => {
-        set_key_to_use("encryption_key", "update_encryption_key");
-    });
-
-    let session_names_div = $("#sessions_radio_buttons");
-    let sessionsMeta = await recreateSessionsMeta();
-    Object.values(sessionsMeta).forEach((sessionMeta) => {
-        session_names_div.append(`
-            <input type="radio" id="${sessionMeta.name}" name="sessions_select" value="${sessionMeta.name}" class="selects_session" />
-            <label for="${sessionMeta.name}">${sessionMeta.name}</label>
-            <br />
-            `);
-    });
-    $(".selects_session").on("click", function () {
-        selectSession($(this).attr("value"));
+    document.getElementById("update_encryption_key").addEventListener("click", async () => {
+        await set_key_to_use("encryption_key", "update_encryption_key");
+        await recreateSessionsMeta();
     });
 });
 

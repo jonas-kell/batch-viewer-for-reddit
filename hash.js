@@ -55,7 +55,7 @@ async function set_key_to_use(input_id, button_id) {
 
         // show encryption is off
         $("#" + String(button_id)).css("background-color", "");
-        console.log("Encryption disabled");
+        toastr.success("Encryption disabled");
 
         // reactivate button
         $("#" + String(button_id)).attr("disabled", null);
@@ -86,7 +86,7 @@ async function set_key_to_use(input_id, button_id) {
                         // show encryption is on
                         $("#" + String(button_id)).css("background-color", "chartreuse");
                         $("#" + String(input_id)).val("");
-                        console.log("Encryption key set and enabled");
+                        toastr.success("Encryption key set and enabled");
 
                         // reactivate button
                         $("#" + String(button_id)).attr("disabled", null);

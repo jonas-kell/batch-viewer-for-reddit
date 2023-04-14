@@ -1,7 +1,7 @@
 let archived_count = 0;
 let count = 0;
 
-$(document).ready(() => {
+$(document).ready(async () => {
     document.getElementById("generate_url_action").addEventListener("click", () => {
         var subreddit_name = document.getElementById("subreddit_name").value;
         var start_with_post = document.getElementById("start_with_post").value;
@@ -22,12 +22,25 @@ $(document).ready(() => {
     document.getElementById("update_encryption_key").addEventListener("click", () => {
         set_key_to_use("encryption_key", "update_encryption_key");
     });
+
+    let session_names_div = $("#sessions_radio_buttons");
+    let sessionsMeta = await recreateSessionsMeta();
+    Object.values(sessionsMeta).forEach((sessionMeta) => {
+        session_names_div.append(`
+            <input type="radio" id="${sessionMeta.name}" name="sessions_select" value="${sessionMeta.name}" class="selects_session" />
+            <label for="${sessionMeta.name}">${sessionMeta.name}</label>
+            <br />
+            `);
+    });
+    $(".selects_session").on("click", function () {
+        selectSession($(this).attr("value"));
+    });
 });
 
 function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
     var start_with_specific_post = start_with_post != "" && (start_with_post.length == 6 || start_with_post.length == 7); // funny, this changed recently and broke the app
 
-    console.log(
+    toastr.info(
         `URL for scraping subreddit "${subreddit_name}" for next set of posts` +
             (start_with_specific_post ? ` after the post with the id ${start_with_post}` : "")
     );
@@ -43,7 +56,7 @@ function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
 
 async function process_posts(api_url = "") {
     if (api_url == "") {
-        console.error("Need to set url first");
+        toastr.error("Need to set url first");
         return;
     }
 
@@ -81,7 +94,7 @@ async function process_posts(api_url = "") {
     document.getElementById("start_with_post").value = json_response["data"]["after"].substr(3);
     document.getElementById("generate_url_action").click();
 
-    console.log("Information processed and advanced for next step");
+    toastr.info("Information processed and advanced for next step");
 
     // download the images and zip them
     var zip = new JSZip();
@@ -122,9 +135,21 @@ async function process_posts(api_url = "") {
     }
     zip.file("contents.json", JSON.stringify(output_array));
 
-    zip.generateAsync({ type: "blob" }).then(function (content) {
-        // see FileSaver.js
-        saveAs(content, "archive_" + String(Date.now()) + (encryption_on() ? "_encrypted" : "") + ".zip");
+    zip.generateAsync({ type: "blob" }).then(async function (content) {
+        const file_name = "archive_" + String(Date.now()) + (encryption_on() ? "_encrypted" : "") + ".zip";
+
+        let selectedSession = getSelectedSession();
+        if (selectedSession == null) {
+            // Download see FileSaver.js
+            saveAs(content, file_name);
+            toastr.info("Downloaded: " + file_name);
+        } else {
+            content.name = file_name;
+            // store directly into the session
+            await storeDataFileInSelectedSessionsOpfsFolder(content);
+
+            toastr.info("Stored " + file_name + " successfully into the session data files of session: " + selectedSession.name);
+        }
     });
 }
 
@@ -182,6 +207,6 @@ async function get_media(url = "") {
         return await get_media(video_url);
     }
 
-    console.error("Unprocessable data entity for url" + url);
+    toastr.error("Unprocessable data entity for url " + url);
     return null;
 }

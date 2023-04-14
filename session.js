@@ -21,9 +21,10 @@ $(document).ready(() => {
             const filename = files[i].name;
 
             if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
-                await storeDataFileOnOpfsTopLevel(files[i]);
+                await storeDataFileInSelectedSessionsOpfsFolder(files[i]);
+                toastr.info("Read in file: " + filename);
             } else {
-                console.error("Data file not storable: " + filename);
+                toastr.error("Data file not storable: " + filename);
             }
         }
 

@@ -30,6 +30,8 @@ urlsToCache = [
     "assets/icons/icon-384x384.png",
     "assets/icons/icon-512x512.png",
     "https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css",
     "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js",
 ];

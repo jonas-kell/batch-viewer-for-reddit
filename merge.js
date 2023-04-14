@@ -15,7 +15,7 @@ $(document).ready(() => {
                 update_file_list();
             });
         } else {
-            console.error("Zip file already included");
+            toastr.error("Zip file already included");
         }
     });
 

@@ -35,10 +35,10 @@ function selectSession(session_name = "") {
             selected_session_name = session_name;
             return true;
         } else {
-            console.error("Encrypted session can not be selected without key");
+            toastr.error("Encrypted session can not be selected without key");
         }
     } else {
-        console.error("Key not found in sessionsMeta cache");
+        toastr.error("Key not found in sessionsMeta cache");
     }
     return false;
 }
@@ -115,10 +115,10 @@ async function deleteSession(fileNameToDelete) {
     const dataDirHandle = await getSessionPostsDirectoryHandle(fileNameToDelete);
     await (await navigator.storage.getDirectory()).removeEntry(dataDirHandle.name, { recursive: true });
 
-    console.log(`Deleted Session ${fileNameToDelete}`);
+    toastr.success(`Deleted Session ${fileNameToDelete}`);
 }
 
-async function storeDataFileOnOpfsTopLevel(file) {
+async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     const filename = file.name;
     const dataDirHandle = await getSessionPostsDirectoryHandle();
     const dataFileHandle = await dataDirHandle.getFileHandle(filename, {

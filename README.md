@@ -28,3 +28,16 @@ python3 -m http.server 8080 --bind 127.0.0.1
 
 This is also useful for archiving, because most of the images that are hosted on `i.redd.it` will net get served to the online version because of [cors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
 However when running the server locally and opening [http://localhost:8080](http://localhost:8080), cors is allowed by reddit's CDN.
+
+### Archiving if not on localhost
+
+As stated in the previous section, CORS forbids archiving on the hosted version.
+To circumvent this, start a Proxy Server on a local machine, that has port 9376 open (look up how this works, but do not open to the internet, the server is unsecure).
+
+Start the server with
+
+```cmd
+python3 proxy.py
+```
+
+It will tell you the computers ip. Enter it into the `Proxy Server` field in the archive tab.

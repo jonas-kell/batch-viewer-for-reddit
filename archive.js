@@ -23,6 +23,31 @@ $(document).ready(async () => {
         await set_key_to_use("encryption_key", "update_encryption_key");
         await recreateSessionsMeta();
     });
+
+    $("#proxy_address").on("change", async function () {
+        let value = $(this).val();
+
+        await fetch(`http://${value}:9376/check`, {
+            method: "GET",
+        })
+            .then(async (response) => {
+                if (response.ok) {
+                    const jsonData = await response.json();
+
+                    if (jsonData.success != undefined && jsonData.success) {
+                        toastr.success("Connected to Proxy Server");
+                        $("#proxy_address").css("background", "green");
+                        return;
+                    }
+                }
+                $("#proxy_address").css("background", "red");
+                toastr.error("Proxy Server not found");
+            })
+            .catch(() => {
+                $("#proxy_address").css("background", "red");
+                toastr.error("Proxy Server not found");
+            });
+    });
 });
 
 function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
@@ -156,6 +181,12 @@ function media_url(json_post) {
 
 async function get_media(url = "") {
     const lower_url = url.toLowerCase();
+
+    const proxy_address = $("#proxy_address").val();
+    if (proxy_address != null && process_posts != "") {
+        url = `http://${proxy_address}:9376/resource?url=${encodeURIComponent(url)}`;
+    }
+
     // normal picture or mp4 video
     if (
         lower_url.includes(".jpg") ||

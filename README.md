@@ -37,10 +37,10 @@ To circumvent this, start a Proxy Server on a local machine, that has port 9376 
 As this will require a secure context, you need to generate a ssl-certificate (in the application folder):
 
 ```cmd
-openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+openssl req -subj "/C=DE/CN=proxy" -addext "subjectAltName = DNS:proxy.lan" -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 ```
 
-However you need to make your browser trust your self signed certificate. This is non-trivial and probably requires a bit of googeling, sry.
+However you need to make your browser trust your self signed certificate. And your DNS points `proxy.lan` to the server. This is non-trivial and probably requires a bit of googeling, sry.
 
 Start the server with
 

@@ -34,6 +34,14 @@ However when running the server locally and opening [http://localhost:8080](http
 As stated in the previous section, CORS forbids archiving on the hosted version.
 To circumvent this, start a Proxy Server on a local machine, that has port 9376 open (look up how this works, but do not open to the internet, the server is unsecure).
 
+As this will require a secure context, you need to generate a ssl-certificate (in the application folder):
+
+```cmd
+openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+```
+
+However you need to make your browser trust your self signed certificate. This is non-trivial and probably requires a bit of googeling, sry.
+
 Start the server with
 
 ```cmd

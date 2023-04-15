@@ -27,7 +27,7 @@ $(document).ready(async () => {
     $("#proxy_address").on("change", async function () {
         let value = $(this).val();
 
-        await fetch(`http://${value}:9376/check`, {
+        await fetch(`https://${value}:9376/check`, {
             method: "GET",
         })
             .then(async (response) => {
@@ -184,7 +184,7 @@ async function get_media(url = "") {
 
     const proxy_address = $("#proxy_address").val();
     if (proxy_address != null && process_posts != "") {
-        url = `http://${proxy_address}:9376/resource?url=${encodeURIComponent(url)}`;
+        url = `https://${proxy_address}:9376/resource?url=${encodeURIComponent(url)}`;
     }
 
     // normal picture or mp4 video

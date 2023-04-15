@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
 import requests
 import socket
+import ssl
 
 hostName = "0.0.0.0"
 serverPort = 9376
@@ -42,7 +43,10 @@ if __name__ == "__main__":
     print("Proxy Server IP Address is: " + IPAddr)
 
     webServer = HTTPServer((hostName, serverPort), RequestProxyServer)
-    print("Proxy Server started http://%s:%s" % (hostName, serverPort))
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain("./cert.pem", "./key.pem")
+    webServer.socket = context.wrap_socket(webServer.socket, server_side=True)
+    print("Proxy Server started https://%s:%s" % (hostName, serverPort))
 
     try:
         webServer.serve_forever()

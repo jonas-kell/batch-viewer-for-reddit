@@ -41,6 +41,7 @@ openssl req -subj "/C=DE/CN=proxy" -addext "subjectAltName = DNS:proxy.lan" -x50
 ```
 
 However you need to make your browser trust your self signed certificate. And your DNS points `proxy.lan` to the server. This is non-trivial and probably requires a bit of googeling, sry.
+(Export to a `.pfx` file with password `mypassword` by running `openssl pkcs12 -export -out bundle.pfx -inkey key.pem -in cert.pem -passout pass:mypassword`).
 
 Start the server with
 

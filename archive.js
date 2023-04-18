@@ -27,28 +27,40 @@ $(document).ready(async () => {
     $("#proxy_address").on("change", async function () {
         let value = $(this).val();
 
-        await fetch(`https://${value}:9376/check`, {
-            method: "GET",
-        })
-            .then(async (response) => {
-                if (response.ok) {
-                    const jsonData = await response.json();
-
-                    if (jsonData.success != undefined && jsonData.success) {
-                        toastr.success("Connected to Proxy Server");
-                        $("#proxy_address").css("background", "green");
-                        return;
-                    }
-                }
-                $("#proxy_address").css("background", "red");
-                toastr.error("Proxy Server not found");
-            })
-            .catch(() => {
-                $("#proxy_address").css("background", "red");
-                toastr.error("Proxy Server not found");
-            });
+        await set_proxy_url(value);
     });
+    let cached_proxy_url = localStorage.getItem("proxy_url");
+    if (cached_proxy_url != undefined && cached_proxy_url) {
+        set_proxy_url(cached_proxy_url);
+    }
 });
+
+async function set_proxy_url(url) {
+    $("#proxy_address").val(url);
+
+    await fetch(`https://${url}:9376/check`, {
+        method: "GET",
+    })
+        .then(async (response) => {
+            if (response.ok) {
+                const jsonData = await response.json();
+
+                if (jsonData.success != undefined && jsonData.success) {
+                    toastr.success("Connected to Proxy Server");
+                    $("#proxy_address").css("background", "green");
+                    return;
+                }
+            }
+            $("#proxy_address").css("background", "red");
+            toastr.error("Proxy Server not found");
+        })
+        .catch(() => {
+            $("#proxy_address").css("background", "red");
+            toastr.error("Proxy Server not found");
+        });
+
+    localStorage.setItem("proxy_url", url);
+}
 
 function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
     var start_with_specific_post = start_with_post != "" && (start_with_post.length == 6 || start_with_post.length == 7); // funny, this changed recently and broke the app

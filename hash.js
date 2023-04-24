@@ -31,15 +31,15 @@ function hex_string_to_typed_array(hex_string) {
     return typedArray;
 }
 
-var used_key = null;
+var active_keys = {};
 
 // This is not really a proper way to use salt, but it is sufficent for this purpose.
 // Secure implementation would require randomizing the salt, but that requires storing it also and I do not have the capability to do that
 // This means passphrases need to be so complex that they cannot be attacked with dictionary attacks. Otherwise I cannot help you
 const salt = new Uint8Array([254, 136, 190, 138, 248, 102, 91, 48, 137, 81, 219, 33, 227, 152, 66, 233]);
 
-function encryption_on() {
-    if (used_key == null) {
+function encryption_on(scope = "page") {
+    if (active_keys[scope] == undefined || active_keys[scope] == null) {
         return false;
     } else {
         return true;
@@ -48,10 +48,11 @@ function encryption_on() {
 
 async function set_key_to_use(input_id, button_id) {
     $("#" + String(button_id)).attr("disabled", "disabled");
-    var password = String(document.getElementById(input_id).value);
+    let scope = $("#" + String(button_id)).attr("scope") ?? "page";
+    let password = String(document.getElementById(input_id).value);
 
     if (password == "") {
-        used_key = null;
+        delete active_keys[scope];
 
         // show encryption is off
         $("#" + String(button_id)).css("background-color", "");
@@ -81,7 +82,7 @@ async function set_key_to_use(input_id, button_id) {
                         ["encrypt", "decrypt"]
                     )
                     .then(async (encryptionKey) => {
-                        used_key = encryptionKey;
+                        active_keys[scope] = encryptionKey;
 
                         // show encryption is on
                         $("#" + String(button_id)).css("background-color", "chartreuse");
@@ -95,21 +96,25 @@ async function set_key_to_use(input_id, button_id) {
     }
 }
 
-async function encrypt_text(text, iv_string) {
-    if (!encryption_on()) {
+async function encrypt_text(text, iv_string, scope = "page") {
+    if (!encryption_on(scope)) {
         return text;
     }
 
     let enc = new TextEncoder();
     let message = enc.encode(text);
 
-    ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, message);
+    ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) },
+        active_keys[scope],
+        message
+    );
 
     return array_buffer_to_hex_string(ciphertext);
 }
 
-async function decrypt_text(text, iv_string) {
-    if (!encryption_on()) {
+async function decrypt_text(text, iv_string, scope = "page") {
+    if (!encryption_on(scope)) {
         return text;
     }
 
@@ -117,7 +122,7 @@ async function decrypt_text(text, iv_string) {
     try {
         decrypted = await crypto.subtle.decrypt(
             { name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) },
-            used_key,
+            active_keys[scope],
             hex_string_to_typed_array(text)
         );
     } catch (error) {
@@ -129,8 +134,8 @@ async function decrypt_text(text, iv_string) {
     return dec.decode(decrypted);
 }
 
-function encrypt_blob(blob, iv_string) {
-    if (!encryption_on()) {
+function encrypt_blob(blob, iv_string, scope = "page") {
+    if (!encryption_on(scope)) {
         return blob;
     }
 
@@ -138,7 +143,7 @@ function encrypt_blob(blob, iv_string) {
         const asArrayBuffer = await blob.arrayBuffer();
 
         window.crypto.subtle
-            .encrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, asArrayBuffer)
+            .encrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, active_keys[scope], asArrayBuffer)
             .then((buffer) => {
                 let out_blob = new Blob([buffer], {
                     type: blob.type,
@@ -152,8 +157,8 @@ function encrypt_blob(blob, iv_string) {
     });
 }
 
-function decrypt_blob(blob, iv_string) {
-    if (!encryption_on()) {
+function decrypt_blob(blob, iv_string, scope = "page") {
+    if (!encryption_on(scope)) {
         return blob;
     }
 
@@ -162,7 +167,7 @@ function decrypt_blob(blob, iv_string) {
 
         try {
             crypto.subtle
-                .decrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, used_key, asArrayBuffer)
+                .decrypt({ name: "AES-GCM", iv: iv_string_to_uint8array(iv_string) }, active_keys[scope], asArrayBuffer)
                 .then((buffer) => {
                     let out_blob = new Blob([buffer], {
                         type: blob.type,

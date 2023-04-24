@@ -3,6 +3,7 @@ from urllib import parse
 import requests
 import socket
 import ssl
+from socketserver import ThreadingMixIn
 
 hostName = "0.0.0.0"
 serverPort = 9376
@@ -35,6 +36,8 @@ class RequestProxyServer(BaseHTTPRequestHandler):
             self.send_response(500)
             print(f"Error: not serving on path {self.path}")
 
+class ThreadedHTTPServer (ThreadingMixIn, HTTPServer):
+    pass
 
 if __name__ == "__main__":
     hostname = socket.gethostname()
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     print("Proxy Server Name is: " + hostname)
     print("Proxy Server IP Address is: " + IPAddr)
 
-    webServer = HTTPServer((hostName, serverPort), RequestProxyServer)
+    webServer = ThreadedHTTPServer((hostName, serverPort), RequestProxyServer)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain("./cert.pem", "./key.pem")
     webServer.socket = context.wrap_socket(webServer.socket, server_side=True)

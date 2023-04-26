@@ -96,10 +96,18 @@
             <br />
             Where to put the results:
             <fieldset>
-                <input type="radio" id="default" name="sessions_select" value="default" class="selects_session" checked />
-                <label for="default">Download</label>
+                <input
+                    type="radio"
+                    id="default_page"
+                    name="sessions_select_page"
+                    value="default"
+                    class="selects_session"
+                    scope="page"
+                    checked
+                />
+                <label for="default_page">Download</label>
                 <br />
-                <div id="sessions_radio_buttons"></div>
+                <div class="sessions_radio_buttons" scope="page"></div>
             </fieldset>
         </div>
     </body>

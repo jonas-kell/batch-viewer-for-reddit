@@ -3,7 +3,13 @@ let rendered_media_cache = {};
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", async () => {
         await set_key_to_use("decryption_key", "update_decryption_key");
+
+        selectSession(); // clear page scope session
+
         await recreateSessionsMeta();
+
+        // send reset command
+        $("#load_files_from_session").click();
     });
 
     $(document).on("click", "#load_files_from_session", () => {
@@ -74,6 +80,10 @@ async function display_post(json_post) {
 
 // caches the result
 async function render_post(json_post) {
+    if (json_post == null) {
+        return;
+    }
+
     const filename = json_post.hash_filename;
     const cache_index = (json_post.zip_file_name ?? "") + filename;
 

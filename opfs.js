@@ -1,5 +1,5 @@
 let sessionsMeta = {};
-let selected_session_name = "";
+let selectedSessionNames = {};
 
 async function getSessionDirectoryHandle() {
     const originPrivateFileSystem = await navigator.storage.getDirectory();
@@ -8,9 +8,9 @@ async function getSessionDirectoryHandle() {
     return sessionDirHandle;
 }
 
-async function getSessionPostsDirectoryHandle(session_name = "") {
+async function getSessionPostsDirectoryHandle(session_name = "", scope = "page") {
     if (session_name == "") {
-        session_name = selected_session_name;
+        session_name = getSelectedSessionName(scope);
     }
 
     if (session_name != "") {
@@ -24,15 +24,16 @@ async function getSessionPostsDirectoryHandle(session_name = "") {
     return null;
 }
 
-function selectSession(session_name = "") {
-    selected_session_name = "";
+function selectSession(session_name = "", scope = "page") {
+    delete selectedSessionNames[scope];
     if (session_name == "") {
+        $(`#default_${scope}`).prop("checked", true);
         return false;
     }
 
-    if (Object.keys(sessionsMeta).includes(session_name)) {
-        if (sessionsMeta[session_name].can_be_decrypted ?? false) {
-            selected_session_name = session_name;
+    if (Object.keys(sessionsMeta[scope]).includes(session_name)) {
+        if (sessionsMeta[scope][session_name].can_be_decrypted ?? false) {
+            selectedSessionNames[scope] = session_name;
             return true;
         } else {
             toastr.error("Encrypted session can not be selected without key");
@@ -44,15 +45,17 @@ function selectSession(session_name = "") {
             toastr.success("Selected default operation");
         }
     }
+    $(`#default_${scope}`).prop("checked", true);
     return false;
 }
 
-function getSelectedSession() {
-    return getSession(selected_session_name);
+function getSelectedSession(scope = "page") {
+    return getSession(getSelectedSessionName(scope), scope);
 }
 
-function getSession(session_name) {
-    let res = sessionsMeta[session_name];
+function getSession(session_name, scope = "page") {
+    let obj = sessionsMeta[scope] ?? {};
+    let res = obj[session_name];
 
     if (res != undefined) {
         return res;
@@ -60,14 +63,14 @@ function getSession(session_name) {
     return null;
 }
 
-function getSelectedSessionName() {
-    return selected_session_name;
+function getSelectedSessionName(scope = "page") {
+    return selectedSessionNames[scope] ?? "";
 }
 
-async function recreateSessionsMeta() {
+async function recreateSessionsMeta(scope = "page") {
     const sessionDirHandle = await getSessionDirectoryHandle();
 
-    sessionsMeta = {};
+    sessionsMeta[scope] = {};
 
     // rebuild sessions array
     for await (const entry of sessionDirHandle.values()) {
@@ -80,20 +83,22 @@ async function recreateSessionsMeta() {
             const session_iv_string = parsedSession.iv_string;
             let throws_error = false;
             try {
-                await decrypt_text(parsedSession.encryption_test, session_iv_string);
+                await decrypt_text(parsedSession.encryption_test, session_iv_string, scope);
             } catch (error) {
                 throws_error = true;
             }
-            const can_be_decrypted = !is_encrypted || (is_encrypted && encryption_on() && !throws_error);
+            const can_be_decrypted = !is_encrypted || (is_encrypted && encryption_on(scope) && !throws_error);
 
             // decrypt posts
             let posts = {};
-            if (encryption_on() && can_be_decrypted && is_encrypted) {
+            if (encryption_on(scope) && can_be_decrypted && is_encrypted) {
                 // need to decrypt
                 for (const post_id_enc in parsedSession.posts) {
-                    const post_id = await decrypt_text(post_id_enc, session_iv_string);
-                    const post_object = JSON.parse(await decrypt_text(parsedSession.posts[post_id_enc], session_iv_string));
-                    posts[post_id] = await decryptPostObject(post_object);
+                    const post_id = await decrypt_text(post_id_enc, session_iv_string, scope);
+                    const post_object = JSON.parse(
+                        await decrypt_text(parsedSession.posts[post_id_enc], session_iv_string, scope)
+                    );
+                    posts[post_id] = await decryptPostObject(post_object, scope);
                 }
             } else {
                 // just do a copy
@@ -101,7 +106,7 @@ async function recreateSessionsMeta() {
             }
 
             // store results
-            sessionsMeta[parsedSession.name] = {
+            sessionsMeta[scope][parsedSession.name] = {
                 name: parsedSession.name,
                 is_encrypted: is_encrypted,
                 iv_string: session_iv_string,
@@ -113,11 +118,11 @@ async function recreateSessionsMeta() {
         }
     }
 
-    return sessionsMeta;
+    return sessionsMeta[scope];
 }
 
-async function createSession() {
-    const filename = "Session_" + String(Date.now()) + (encryption_on() ? "_encrypted" : "") + ".json";
+async function createSession(scope = "page") {
+    const filename = "Session_" + String(Date.now()) + (encryption_on(scope) ? "_encrypted" : "") + ".json";
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(filename, {
         create: true,
@@ -126,9 +131,10 @@ async function createSession() {
     const iv_string = uint8array_to_iv_string(crypto.getRandomValues(new Uint8Array(12)));
 
     await writable.write(
-        `{"name": "${filename}", "encrypted": ${encryption_on()}, "encryption_test": "${await encrypt_text(
+        `{"name": "${filename}", "encrypted": ${encryption_on(scope)}, "encryption_test": "${await encrypt_text(
             String(Math.random()),
-            iv_string
+            iv_string,
+            scope
         )}", "iv_string": "${iv_string}", "posts": {}, "file_meta": {}}`
     );
     await writable.close();
@@ -138,29 +144,29 @@ async function deleteSession(fileNameToDelete) {
     const sessionDirHandle = await getSessionDirectoryHandle();
     await sessionDirHandle.removeEntry(fileNameToDelete);
 
-    const dataDirHandle = await getSessionPostsDirectoryHandle(fileNameToDelete);
+    const dataDirHandle = await getSessionPostsDirectoryHandle(fileNameToDelete); // !! scope does not need to be set, because fileNameToDelete is
     await (await navigator.storage.getDirectory()).removeEntry(dataDirHandle.name, { recursive: true });
 
     toastr.success(`Deleted Session ${fileNameToDelete}`);
 }
 
-async function storeDataFileInSelectedSessionsOpfsFolder(file) {
+async function storeDataFileInSelectedSessionsOpfsFolder(file, scope = "page") {
     const filename = file.name;
-    const dataDirHandle = await getSessionPostsDirectoryHandle();
+    const dataDirHandle = await getSessionPostsDirectoryHandle("", scope);
 
     // check if can be processed
-    let session = getSelectedSession();
+    let session = getSelectedSession(scope); // TODO down from here convert
     if (session == null) {
         toastr.error("No session selected, aborting");
         return;
     }
-    let filenames = await getCurrentSessionDataFilesNames();
+    let filenames = await getCurrentSessionDataFilesNames(scope);
     if (filenames.includes(filename)) {
         toastr.warning("Already included file: " + filename);
         return;
     }
     const file_encrypted = filename.includes("_encrypted");
-    const encryption_enabled = encryption_on();
+    const encryption_enabled = encryption_on(scope);
     if (encryption_enabled != file_encrypted) {
         toastr.error("Encryption mismatch for file: " + filename);
         return;
@@ -169,7 +175,7 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     // process meta
     let meta_info = null;
     try {
-        meta_info = await readInZipFile(file);
+        meta_info = await readInZipFile(file, scope);
     } catch (error) {
         toastr.error("Decryption Key mismatch for file: " + filename);
         return;
@@ -193,11 +199,11 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file) {
     const reloaded_file = await dataFileHandle.getFile();
     session.file_meta[filename] = { size: reloaded_file.size, name: filename };
 
-    await storeCurrentSessionToOpfs();
+    await storeCurrentSessionToOpfs(scope);
 }
 
-async function getSessionDataFilesMeta(session_name) {
-    let session = getSession(session_name);
+async function getSessionDataFilesMeta(session_name, scope = "page") {
+    let session = getSession(session_name, scope);
     if (session == null) {
         return {};
     }
@@ -205,20 +211,20 @@ async function getSessionDataFilesMeta(session_name) {
     return session.file_meta;
 }
 
-async function getSessionDataFilesNames(session_name) {
-    return Object.keys(await getSessionDataFilesMeta(session_name));
+async function getSessionDataFilesNames(session_name, scope = "page") {
+    return Object.keys(await getSessionDataFilesMeta(session_name, scope));
 }
 
-async function getCurrentSessionDataFilesNames() {
-    return await getSessionDataFilesNames(getSelectedSessionName());
+async function getCurrentSessionDataFilesNames(scope = "page") {
+    return await getSessionDataFilesNames(getSelectedSessionName(scope), scope);
 }
 
-async function getSessionNumberOfDataFileNames(session_name) {
-    return (await getSessionDataFilesNames(session_name)).length;
+async function getSessionNumberOfDataFileNames(session_name, scope = "page") {
+    return (await getSessionDataFilesNames(session_name, scope)).length;
 }
 
-async function getSessionDataFileCompleteSize(session_name) {
-    const meta = await getSessionDataFilesMeta(session_name);
+async function getSessionDataFileCompleteSize(session_name, scope = "page") {
+    const meta = await getSessionDataFilesMeta(session_name, scope);
     let size = 0;
 
     for (const file_name in meta) {
@@ -228,27 +234,31 @@ async function getSessionDataFileCompleteSize(session_name) {
     return size;
 }
 
-async function storeCurrentSessionToOpfs() {
-    let session = getSelectedSession();
+async function storeCurrentSessionToOpfs(scope = "page") {
+    let session = getSelectedSession(scope);
     if (session == null) {
         throw new Error("No Session selected");
     }
 
-    const filename = getSelectedSessionName();
+    const filename = getSelectedSessionName(scope);
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(filename);
     const writable = await sessionFileHandle.createWritable();
     const session_iv_string = session.iv_string;
 
-    if (encryption_on()) {
+    if (encryption_on(scope)) {
         // encrypt posts for storage
         session.session.posts = {};
 
         for (const post_id_unenc in session.posts) {
             const post_unenc = session.posts[post_id_unenc];
 
-            const post_id_enc = await encrypt_text(post_id_unenc, session_iv_string);
-            const post_enc = await encrypt_text(JSON.stringify(await encryptPostObject(post_unenc)), session_iv_string);
+            const post_id_enc = await encrypt_text(post_id_unenc, session_iv_string, scope);
+            const post_enc = await encrypt_text(
+                JSON.stringify(await encryptPostObject(post_unenc, scope)),
+                session_iv_string,
+                scope
+            );
 
             session.session.posts[post_id_enc] = post_enc;
         }
@@ -264,7 +274,7 @@ async function storeCurrentSessionToOpfs() {
     toastr.success("Session data stored to File System");
 }
 
-async function readInZipFile(file) {
+async function readInZipFile(file, scope = "page") {
     let post_json = [];
 
     await JSZip.loadAsync(file).then(async function (zip) {
@@ -272,9 +282,9 @@ async function readInZipFile(file) {
         let json = JSON.parse(await contents.async("text"));
 
         // decrypt stuff
-        if (encryption_on()) {
+        if (encryption_on(scope)) {
             for (let j = 0; j < json.length; j++) {
-                json[j] = await decryptPostObject(json[j]);
+                json[j] = await decryptPostObject(json[j], scope);
             }
         }
 
@@ -286,7 +296,7 @@ async function readInZipFile(file) {
     return post_json;
 }
 
-async function decryptPostObject(post) {
+async function decryptPostObject(post, scope = "page") {
     let result_post = {};
 
     // clone
@@ -300,7 +310,7 @@ async function decryptPostObject(post) {
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
         let result = "";
         try {
-            result = await decrypt_text(post[keyword], post["iv_string"] ?? "");
+            result = await decrypt_text(post[keyword], post["iv_string"] ?? "", scope);
         } catch (error) {
             if (keyword == "id") {
                 throw new Error("Current Key not suited for file decryption");
@@ -312,7 +322,7 @@ async function decryptPostObject(post) {
     return result_post;
 }
 
-async function encryptPostObject(post) {
+async function encryptPostObject(post, scope = "page") {
     let result_post = {};
 
     // clone
@@ -324,7 +334,7 @@ async function encryptPostObject(post) {
 
     // decrypt
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
-        result_post[keyword] = await encrypt_text(post[keyword], post["iv_string"] ?? "");
+        result_post[keyword] = await encrypt_text(post[keyword], post["iv_string"] ?? "", scope);
     }
 
     return result_post;

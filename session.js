@@ -1,7 +1,7 @@
 $(document).ready(() => {
     document.getElementById("update_decryption_key").addEventListener("click", async () => {
         await set_key_to_use("decryption_key", "update_decryption_key");
-        selectSession();
+        selectSession(); // clear page scope session
 
         update_session_display();
     });
@@ -62,11 +62,12 @@ async function update_session_display() {
 
     // rebuild sessions array
     let sessionsMeta = await recreateSessionsMeta();
+    let selectedSessionName = await getSelectedSessionName();
 
     // render
     for (const parsedSession of Object.values(sessionsMeta)) {
         // render element
-        const style = parsedSession.name == selected_session_name ? "background: green" : "";
+        const style = parsedSession.name == selectedSessionName ? "background: green" : "";
         const content = `<tr>
                 <td style="${style}">${parsedSession.name}</td>
                 <td style="${style}">${parsedSession.is_encrypted ? "Yes" : "No"} ${
@@ -119,6 +120,7 @@ function update_event_listeners() {
     $(".select_session").on("click", async function () {
         let fileNameToSelect = $(this).attr("file_name");
 
+        // scope is automatically "page" scope
         if (selectSession(fileNameToSelect)) {
             update_session_display();
         }

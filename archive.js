@@ -21,6 +21,9 @@ $(document).ready(async () => {
 
     document.getElementById("update_encryption_key").addEventListener("click", async () => {
         await set_key_to_use("encryption_key", "update_encryption_key");
+
+        selectSession(); // clear page scope session
+
         await recreateSessionsMeta();
     });
 

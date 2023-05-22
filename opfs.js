@@ -27,6 +27,7 @@ async function getSessionPostsDirectoryHandle(session_name = "", scope = "page")
 function selectSession(session_name = "", scope = "page") {
     delete selectedSessionNames[scope];
     if (session_name == "") {
+        console.log(scope);
         $(`#default_${scope}`).prop("checked", true);
         return false;
     }
@@ -155,7 +156,7 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file, scope = "page") {
     const dataDirHandle = await getSessionPostsDirectoryHandle("", scope);
 
     // check if can be processed
-    let session = getSelectedSession(scope); // TODO down from here convert
+    let session = getSelectedSession(scope);
     if (session == null) {
         toastr.error("No session selected, aborting");
         return;

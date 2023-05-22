@@ -15,6 +15,8 @@ urlsToCache = [
     "manage.js",
     "session.html",
     "session.js",
+    "export.html",
+    "export.js",
     "hash.js",
     "opfs.js",
     "sessionselectbuttons.js",

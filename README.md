@@ -88,6 +88,8 @@ sudo lsof -i -P -n | grep LISTEN
 
 # install tor
 sudo apt install tor
+sudo apt install python3-pip
+pip3 install "requests[socks]"
 
 # run tor
 tor

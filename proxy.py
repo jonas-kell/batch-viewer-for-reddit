@@ -6,6 +6,8 @@ import ssl
 from socketserver import ThreadingMixIn
 import argparse
 
+# pip install "requests[socks]"
+
 
 class RequestProxyServer(BaseHTTPRequestHandler):
     def __init__(self, request, client_address, server, tor_enabled=False):

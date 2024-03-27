@@ -104,8 +104,6 @@ class ThreadedProxyServer(ThreadingMixIn, HTTPServer):
     pass
 
 
-serverPort = 9376
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Proxy script for the batch viewer")
     parser.add_argument(
@@ -117,12 +115,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--expose", action="store_true", help="Expose outside of the local machine"
     )
+    parser.add_argument(
+        "--port", type=int, default=9376, help="Server Port number (default: 9376)"
+    )
+
     args = parser.parse_args()
 
     parser.print_help()
 
     use_ssl = args.ssl
     use_tor = args.tor
+    serverPort = args.port
     expose = args.expose
 
     if expose:

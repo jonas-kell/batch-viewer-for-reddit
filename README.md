@@ -68,6 +68,13 @@ That one could use Let's Encrypt or any other cert.
 If used only locally and/or with different ssl-termination, the proxy may run without self signed certificate/SSL.
 Only if you want to use the certs from the local folder, add the flag `--ssl`.
 
+#### Arguments: Port
+
+If an extra reverse proxy is used, it is probably necessary to run the server on a different port.
+You can use `--port=12323` to achieve this.
+
+Default is `9376` and the application expects this port to be the correct one in the end.
+
 #### Arguments: Tor
 
 When you add the flag `--tor`, the proxy will attempt to pass all the traffic through the tor network.

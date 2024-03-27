@@ -1,4 +1,4 @@
-### Purpose
+# Batch-Viewer what is it?
 
 Backup a bunch of reddit posts into one singular file to be able to view it offline.
 
@@ -8,45 +8,80 @@ Many convenience features could be added, but at th moment this is just for my f
 
 Supports encryption, as I wanted an experiment to play around with the `crypto` api.
 
-### Supported browsers
+## Supported browsers
 
-Complete featureset currently only working for chrome.
+Complete feature set currently only working for chrome.
 Archiving working on most browsers, but images get only downloaded when starting th app locally (because of cors).
 No browser except chrome currently has access to the [File System Access API](https://web.dev/file-system-access/), so the zip files for playback need to be loaded from smaller zip files with the lower-performance file pickers instead.
 
-### Hosted version
+## Hosted version
 
 Hosted and installable (as a [PWA](https://web.dev/progressive-web-apps/)) under [https://jonas-kell.github.io/batch-viewer-for-reddit/](https://jonas-kell.github.io/batch-viewer-for-reddit/).
 
-### Local testing
+## Local testing
 
 Run in the base of the project:
 
-```cmd
+```shell
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
 This is also useful for archiving, because most of the images that are hosted on `i.redd.it` will net get served to the online version because of [cors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
 However when running the server locally and opening [http://localhost:8080](http://localhost:8080), cors is allowed by reddit's CDN.
 
-### Archiving if not on localhost
+## Archiving if not on localhost
 
 As stated in the previous section, CORS forbids archiving on the hosted version.
 To circumvent this, start a Proxy Server on a local machine, that has port 9376 open (look up how this works, but do not open to the internet, the server is unsecure).
 
-As this will require a secure context, you need to generate a ssl-certificate (in the application folder):
+### The proxy server
 
-```cmd
+Start the server with
+
+```shell
+python3 proxy.py
+```
+
+It will tell you the computers ip. Enter it into the `Proxy Server` field in the archive tab.
+(Or use local/global DNS if configured).
+
+#### Arguments: Expose
+
+If the proxy is only used locally, it should be used without the `--expose` flag.
+Then the proxy will only serve on `127.0.0.1` to avoid exposing anything.
+
+#### Arguments: SSL
+
+Using a proxy if the application is deployed on a https-URL, will require a secure context for the proxy.
+You need to generate a ssl-certificate (in the application folder):
+
+```shell
 openssl req -subj "/C=DE/CN=proxy" -addext "subjectAltName = DNS:proxy.lan" -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 ```
 
 However you need to make your browser trust your self signed certificate. And your DNS points `proxy.lan` to the server. This is non-trivial and probably requires a bit of googeling, sry.
 (Export to a `.pfx` file with password `mypassword` by running `openssl pkcs12 -export -out bundle.pfx -inkey key.pem -in cert.pem -passout pass:mypassword`).
 
-Start the server with
+Alternatively, you could configure a ssl-terminating reverse proxy with something like `nginx`.
+That one could use Let's Encrypt or any other cert.
 
-```cmd
-python3 proxy.py
+If used only locally and/or with different ssl-termination, the proxy may run without self signed certificate/SSL.
+Only if you want to use the certs from the local folder, add the flag `--ssl`.
+
+#### Arguments: Tor
+
+When you add the flag `--tor`, the proxy will attempt to pass all the traffic through the tor network.
+Therefore you require having a running tor installation on the machine that runs the script.
+
+(Tor port must be `9050`)
+
+```shell
+# Check what ports are used
+sudo lsof -i -P -n | grep LISTEN
+
+# install tor
+sudo apt install tor
+
+# run tor
+tor
 ```
-
-It will tell you the computers ip. Enter it into the `Proxy Server` field in the archive tab.

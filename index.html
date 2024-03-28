@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <!-- meta -->
+        <meta charset="utf-8" />
+        <title>Batch Viewer for Reddit</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta
+            name="description"
+            content="Author: J.Kell,
+        Tool to scrape reddit posts for offline viewing.
+        "
+        />
+        <meta name="theme-color" content="red" media="(prefers-color-scheme: dark)" />
+
+        <!-- links -->
+        <link rel="manifest" href="app.webmanifest" />
+
+        <!-- favicons -->
+        <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png" />
+        <link rel="mask-icon" href="assets/favicons/safari-pinned-tab.svg" color="#5bbad5" />
+        <meta name="msapplication-TileColor" content="#da532c" />
+    </head>
+
     <body>
-        <h1>Batch Viewer for Reddit</h1>
-
-        <span> Archive: <a href="archive.html">Archive a new set of posts</a></span>
-        <br />
-        <br />
-        <br />
-        <span> Merge: <a href="merge.html">Merge multiple collections</a></span>
-        <br />
-        <br />
-        <br />
-        <span> Manage Local Sessions: <a href="session.html">Load or create a viewing session</a></span>
-        <br />
-        <br />
-        <br />
-        <span> Export Sessions: <a href="export.html">Export a viewing session</a></span>
-        <br />
-        <br />
-        <br />
-        <span> View: <a href="manage.html">View and Manage sessions</a></span>
-
-        <button id="update_app_button" style="position: absolute; right: 2em; bottom: 2em">Hard Update App</button>
+        <div id="app"></div>
+        <script type="module" src="/src/app.ts"></script>
     </body>
-
-    <script src="app.js"></script>
 </html>

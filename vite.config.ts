@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
     // Configuration options
-    base: "/",
+    base: "/batch-viewer-for-reddit/",
     plugins: [
         vue(),
         VitePWA({

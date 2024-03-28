@@ -4,6 +4,7 @@
     "description": "Backup a bunch of reddit posts into one singular file to be able to view it offline.",
     "type": "module",
     "scripts": {
+        "preview": "vue-tsc && vite build && vite preview",
         "build": "vue-tsc && vite build",
         "dev": "vue-tsc && vite"
     },
@@ -27,7 +28,6 @@
     },
     "dependencies": {
         "file-saver": "^2.0.5",
-        "jquery": "^3.6.0",
         "jszip": "^3.10.1",
         "toastr": "^2.1.4",
         "vue": "^3.4.21"

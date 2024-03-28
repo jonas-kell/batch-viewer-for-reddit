@@ -3,3 +3,4 @@ key.pem
 *.pem
 *.pfx
 node_modules
+dist

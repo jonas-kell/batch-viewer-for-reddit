@@ -21,7 +21,7 @@
     },
     "homepage": "https://github.com/jonas-kell/batch-viewer-for-reddit#readme",
     "devDependencies": {
-        "vite": "^4.4.4",
+        "vite": "^5.2.0",
         "vite-plugin-static-copy": "^1.0.2"
     },
     "dependencies": {

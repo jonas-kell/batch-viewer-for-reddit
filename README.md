@@ -18,16 +18,24 @@ No browser except chrome currently has access to the [File System Access API](ht
 
 Hosted and installable (as a [PWA](https://web.dev/progressive-web-apps/)) under [https://jonas-kell.github.io/batch-viewer-for-reddit/](https://jonas-kell.github.io/batch-viewer-for-reddit/).
 
-## Local testing
+## Local developing and running
 
 Run in the base of the project:
 
 ```shell
-python3 -m http.server 8080 --bind 127.0.0.1
+npm run dev
 ```
 
 This is also useful for archiving, because most of the images that are hosted on `i.redd.it` will net get served to the online version because of [cors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
-However when running the server locally and opening [http://localhost:8080](http://localhost:8080), cors is allowed by reddit's CDN.
+However when running the server locally and opening [http://localhost:5173/batch-viewer-for-reddit/](http://localhost:5173/batch-viewer-for-reddit/), cors is allowed by reddit's CDN.
+
+To test PWA installation locally:
+
+```shell
+npm run preview
+```
+
+See here: [http://localhost:4173/batch-viewer-for-reddit/](http://localhost:4173/batch-viewer-for-reddit/).
 
 ## Archiving if not on localhost
 

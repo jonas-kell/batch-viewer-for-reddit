@@ -1,14 +1,14 @@
 // vite.config.js
 import { defineConfig } from "vite";
-import copy from "vite-plugin-copy";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
     // Configuration options
-    base: "/", // Adjust the base URL if needed
+    base: "/",
     build: {
         rollupOptions: {
             input: {
-                main: "src/app.js", // Change 'src/main.js' to your entry JavaScript file
+                main: "src/app.js",
             },
         },
     },
@@ -35,9 +35,8 @@ export default defineConfig({
         ],
     },
     plugins: [
-        copy({
-            targets: [{ src: "assets/*", dest: "dist/assets" }],
-            clean: true,
+        viteStaticCopy({
+            targets: [{ src: "assets/*", dest: "assets" }],
         }),
     ],
 });

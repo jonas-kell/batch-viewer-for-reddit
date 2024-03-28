@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Backup a bunch of reddit posts into one singular file to be able to view it offline.",
     "main": "app.js",
+    "type": "module",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "vite build",
@@ -20,8 +21,8 @@
     },
     "homepage": "https://github.com/jonas-kell/batch-viewer-for-reddit#readme",
     "devDependencies": {
-        "vite": "^5.2.6",
-        "vite-plugin-copy": "^0.1.6"
+        "vite": "^4.4.4",
+        "vite-plugin-static-copy": "^1.0.2"
     },
     "dependencies": {
         "file-saver": "^2.0.5",

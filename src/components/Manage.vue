@@ -1,0 +1,67 @@
+<script setup lang="ts"></script>
+
+<template>
+    <RouterLink to="/"><h1>Batch Viewer for Reddit</h1></RouterLink>
+
+    <h2>Display Contents</h2>
+    <br />
+    Decryption key (If input is encrypted, this needs to be set):<br />
+    <input type="password" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
+    <button id="update_decryption_key">Update</button>
+
+    <br />
+    <br />
+    Which Session to load:
+    <fieldset>
+        <input
+            type="radio"
+            id="default_page"
+            name="sessions_select_page"
+            value="default"
+            class="selects_session"
+            scope="page"
+            checked
+        />
+        <label for="default_page">Please choose</label>
+        <br />
+        <div class="sessions_radio_buttons" scope="page"></div>
+    </fieldset>
+    <br />
+    <br />
+    Randomized import:
+    <input type="checkbox" id="randomize" checked />
+    &nbsp&nbsp Image Width:
+    <input type="number" id="post_width" value="100" min="10" max="100" step="10" />
+    <button id="load_files_from_session" style="display: none"></button>
+
+    <br />
+    <br />
+    <div style="width: 100%; text-align: center">
+        <div style="width: 60%; margin: auto">
+            <input type="number" value="0" style="width: 20%" id="current_number_top" class="current_number" /> /
+            <span id="max_number_top" class="max_number">0</span>
+            <span style="float: left; border: 1px solid black; cursor: pointer" id="view_prev_top" class="view_prev">prev</span>
+            <span style="float: right; border: 1px solid black; cursor: pointer" id="view_next_top" class="view_next">next</span>
+        </div>
+    </div>
+    <br />
+    <div style="width: 100%; text-align: center; min-height: 2cm; border: 2px solid black; position: relative">
+        <div id="view_target" style="width: 98%; text-align: center; position: relative; margin: auto"></div>
+        <div style="visibility: hidden" hidden id="view_area_cache"></div>
+    </div>
+    <br />
+    <div style="width: 100%; text-align: center">
+        <div style="width: 60%; margin: auto">
+            <input type="number" value="0" style="width: 20%" id="current_number_bottom" class="current_number" disabled /> /
+            <span id="max_number_bottom" class="max_number">0</span>
+            <span style="float: left; border: 1px solid black; cursor: pointer" id="view_prev_bottom" class="view_prev"
+                >prev</span
+            >
+            <span style="float: right; border: 1px solid black; cursor: pointer" id="view_next_bottom" class="view_next"
+                >next</span
+            >
+        </div>
+    </div>
+</template>
+
+<style scoped></style>

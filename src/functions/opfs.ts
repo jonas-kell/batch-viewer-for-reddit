@@ -84,21 +84,19 @@ async function recreateSessionsMeta(scope = "page") {
             const session_iv_string = parsedSession.iv_string;
             let throws_error = false;
             try {
-                await decrypt_text(parsedSession.encryption_test, session_iv_string, scope);
+                await decryptText(parsedSession.encryption_test, session_iv_string, scope);
             } catch (error) {
                 throws_error = true;
             }
-            const can_be_decrypted = !is_encrypted || (is_encrypted && encryption_on(scope) && !throws_error);
+            const can_be_decrypted = !is_encrypted || (is_encrypted && encryptionOn(scope) && !throws_error);
 
             // decrypt posts
             let posts = {};
-            if (encryption_on(scope) && can_be_decrypted && is_encrypted) {
+            if (encryptionOn(scope) && can_be_decrypted && is_encrypted) {
                 // need to decrypt
                 for (const post_id_enc in parsedSession.posts) {
-                    const post_id = await decrypt_text(post_id_enc, session_iv_string, scope);
-                    const post_object = JSON.parse(
-                        await decrypt_text(parsedSession.posts[post_id_enc], session_iv_string, scope)
-                    );
+                    const post_id = await decryptText(post_id_enc, session_iv_string, scope);
+                    const post_object = JSON.parse(await decryptText(parsedSession.posts[post_id_enc], session_iv_string, scope));
                     posts[post_id] = await decryptPostObject(post_object, scope);
                 }
             } else {
@@ -123,16 +121,16 @@ async function recreateSessionsMeta(scope = "page") {
 }
 
 async function createSession(scope = "page") {
-    const filename = "Session_" + String(Date.now()) + (encryption_on(scope) ? "_encrypted" : "") + ".json";
+    const filename = "Session_" + String(Date.now()) + (encryptionOn(scope) ? "_encrypted" : "") + ".json";
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(filename, {
         create: true,
     });
     const writable = await sessionFileHandle.createWritable();
-    const iv_string = uint8array_to_iv_string(crypto.getRandomValues(new Uint8Array(12)));
+    const iv_string = uint8ArrayToIvString(crypto.getRandomValues(new Uint8Array(12)));
 
     await writable.write(
-        `{"name": "${filename}", "encrypted": ${encryption_on(scope)}, "encryption_test": "${await encrypt_text(
+        `{"name": "${filename}", "encrypted": ${encryptionOn(scope)}, "encryption_test": "${await encryptText(
             String(Math.random()),
             iv_string,
             scope
@@ -167,7 +165,7 @@ async function storeDataFileInSelectedSessionsOpfsFolder(file, scope = "page") {
         return;
     }
     const file_encrypted = filename.includes("_encrypted");
-    const encryption_enabled = encryption_on(scope);
+    const encryption_enabled = encryptionOn(scope);
     if (encryption_enabled != file_encrypted) {
         toastr.error("Encryption mismatch for file: " + filename);
         return;
@@ -247,15 +245,15 @@ async function storeCurrentSessionToOpfs(scope = "page") {
     const writable = await sessionFileHandle.createWritable();
     const session_iv_string = session.iv_string;
 
-    if (encryption_on(scope)) {
+    if (encryptionOn(scope)) {
         // encrypt posts for storage
         session.session.posts = {};
 
         for (const post_id_unenc in session.posts) {
             const post_unenc = session.posts[post_id_unenc];
 
-            const post_id_enc = await encrypt_text(post_id_unenc, session_iv_string, scope);
-            const post_enc = await encrypt_text(
+            const post_id_enc = await encryptText(post_id_unenc, session_iv_string, scope);
+            const post_enc = await encryptText(
                 JSON.stringify(await encryptPostObject(post_unenc, scope)),
                 session_iv_string,
                 scope
@@ -283,7 +281,7 @@ async function readInZipFile(file, scope = "page") {
         let json = JSON.parse(await contents.async("text"));
 
         // decrypt stuff
-        if (encryption_on(scope)) {
+        if (encryptionOn(scope)) {
             for (let j = 0; j < json.length; j++) {
                 json[j] = await decryptPostObject(json[j], scope);
             }
@@ -311,7 +309,7 @@ async function decryptPostObject(post, scope = "page") {
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
         let result = "";
         try {
-            result = await decrypt_text(post[keyword], post["iv_string"] ?? "", scope);
+            result = await decryptText(post[keyword], post["iv_string"] ?? "", scope);
         } catch (error) {
             if (keyword == "id") {
                 throw new Error("Current Key not suited for file decryption");
@@ -335,12 +333,12 @@ async function encryptPostObject(post, scope = "page") {
 
     // decrypt
     for (const keyword of ["id", "author", "direct_link", "title", "media_url", "subreddit"]) {
-        result_post[keyword] = await encrypt_text(post[keyword], post["iv_string"] ?? "", scope);
+        result_post[keyword] = await encryptText(post[keyword], post["iv_string"] ?? "", scope);
     }
 
     return result_post;
 }
 
-function sizeToString(size) {
+function sizeToString(size: number) {
     return (size * 1e-6).toFixed(3) + " MB";
 }

@@ -20,6 +20,7 @@
     },
     "homepage": "https://github.com/jonas-kell/batch-viewer-for-reddit#readme",
     "devDependencies": {
+        "@types/toastr": "^2.1.43",
         "@vitejs/plugin-vue": "^5.0.4",
         "typescript": "^5.4.3",
         "vite": "^5.2.0",
@@ -29,6 +30,7 @@
     "dependencies": {
         "file-saver": "^2.0.5",
         "jszip": "^3.10.1",
+        "pinia": "^2.1.7",
         "toastr": "^2.1.4",
         "vue": "^3.4.21",
         "vue-router": "^4.3.0"

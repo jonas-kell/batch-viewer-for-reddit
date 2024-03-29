@@ -33,7 +33,7 @@ function hex_string_to_typed_array(hex_string) {
 
 var active_keys = {};
 
-// This is not really a proper way to use salt, but it is sufficent for this purpose.
+// This is not really a proper way to use salt, but it is sufficient for this purpose.
 // Secure implementation would require randomizing the salt, but that requires storing it also and I do not have the capability to do that
 // This means passphrases need to be so complex that they cannot be attacked with dictionary attacks. Otherwise I cannot help you
 const salt = new Uint8Array([254, 136, 190, 138, 248, 102, 91, 48, 137, 81, 219, 33, 227, 152, 66, 233]);

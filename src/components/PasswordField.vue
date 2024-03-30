@@ -1,31 +1,48 @@
 <script setup lang="ts">
-    // $("#" + String(button_id)).attr("disabled", "disabled");
-    //     let scope = $("#" + String(button_id)).attr("scope") ?? "page";
-    //     let password = String(document.getElementById(input_id).value);
+    import { computed, ref } from "vue";
+    import useKeysStore from "./../stores/keys";
 
-    //     if (password == "") {
-    //         delete active_keys[scope];
+    const keysStore = useKeysStore();
 
-    //         // show encryption is off
-    //         $("#" + String(button_id)).css("background-color", "");
-    //         toastr.success("Encryption disabled");
+    const props = defineProps({
+        scope: {
+            type: String,
+            default: "page",
+        },
+        hint: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String,
+            default: "Decryption key (If input is encrypted, this needs to be set):",
+        },
+    });
 
-    //         // reactivate button
-    //         $("#" + String(button_id)).attr("disabled", null);
+    const internalPassword = ref(keysStore.getPassword(props.scope));
 
-    // .then(async (encryptionKey) => {
-    //                 active_keys[scope] = encryptionKey;
+    function performUpdate() {
+        keysStore.setKey(props.scope, internalPassword.value);
+    }
 
-    //                 // show encryption is on
-    //                 $("#" + String(button_id)).css("background-color", "chartreuse");
-    //                 $("#" + String(input_id)).val("");
-    //                 toastr.success("Encryption key set and enabled");
+    const memoryPasswordSet = computed(() => {
+        let pw = keysStore.getPassword(props.scope);
 
-    //                 // reactivate button
-    //                 $("#" + String(button_id)).attr("disabled", null);
-    //             });
+        return pw != "";
+    });
 </script>
 
-<template></template>
+<template>
+    {{ description }}<br />
+    <input type="password" style="width: 40%" :placeholder="hint" v-model="internalPassword" />
+    <button
+        @click="performUpdate"
+        :style="{
+            'background-color': memoryPasswordSet ? 'chartreuse' : '',
+        }"
+    >
+        Update
+    </button>
+</template>
 
 <style scoped></style>

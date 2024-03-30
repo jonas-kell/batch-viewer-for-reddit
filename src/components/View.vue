@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import PasswordField from "./PasswordField.vue";
+
     // let rendered_media_cache = {};
 
     // $(document).ready(() => {
@@ -223,9 +225,7 @@
 
     <h2>Display Contents</h2>
     <br />
-    Decryption key (If input is encrypted, this needs to be set):<br />
-    <input type="password" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
-    <button id="update_decryption_key">Update</button>
+    <PasswordField scope="page" hint="Decryption Key"></PasswordField>
 
     <br />
     <br />

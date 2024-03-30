@@ -11,7 +11,7 @@
     <br />
     <br />
     <br />
-    <span> Manage Local Sessions: <RouterLink to="/session">Load or create a viewing session</RouterLink></span>
+    <span> Manage Local Sessions: <RouterLink to="/sessions">Load or create a viewing session</RouterLink></span>
     <br />
     <br />
     <br />
@@ -19,7 +19,7 @@
     <br />
     <br />
     <br />
-    <span> View: <RouterLink to="/manage">View and Manage sessions</RouterLink></span>
+    <span> View: <RouterLink to="/view">View and Manage sessions</RouterLink></span>
 </template>
 
 <style scoped></style>

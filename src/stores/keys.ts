@@ -1,15 +1,25 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { keyFromPassword } from "../functions/encrypt";
 
 export default defineStore("keys", () => {
-    const activeKeys = ref({} as { [key: string]: CryptoKey });
+    const activeKeys = ref(
+        {} as {
+            [key: string]: {
+                key: CryptoKey;
+                password: string;
+            };
+        }
+    );
 
-    function setKey(scope: string, password: string) {
+    async function setKey(scope: string, password: string) {
         if (password == "") {
             unsetKey(scope);
         } else {
-            // set the key
-            //TODO
+            activeKeys.value[scope] = {
+                key: await keyFromPassword(password),
+                password: password,
+            };
         }
     }
 
@@ -26,7 +36,11 @@ export default defineStore("keys", () => {
     }
 
     function getKey(scope: string): CryptoKey {
-        return activeKeys.value[scope];
+        return activeKeys.value[scope].key;
+    }
+
+    function getPassword(scope: string): string {
+        return activeKeys.value[scope]?.password ?? "";
     }
 
     return {
@@ -34,5 +48,6 @@ export default defineStore("keys", () => {
         unsetKey,
         encryptionOn,
         getKey,
+        getPassword,
     };
 });

@@ -260,7 +260,7 @@
     <br />
     Which Session to view:
     <SessionSelectButtons
-        defaultSelectionLabel="Download"
+        defaultSelectionLabel="Please Select Session"
         scope="page"
         @sessionSelected="handleSessionSelected"
     ></SessionSelectButtons>

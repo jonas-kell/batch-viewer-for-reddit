@@ -11,6 +11,22 @@
     const scope = "page";
     onMounted(() => {
         sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+
+        // triggers for the dynamically generated parts of the html
+        document.addEventListener("click", function (event: any) {
+            // Check if the clicked element has the class "view_prev"
+            if (event.target.classList.contains("view_prev")) {
+                console.log("view_prev clicked");
+                selectPrevImage();
+            }
+        });
+        document.addEventListener("click", function (event: any) {
+            // Check if the clicked element has the class "view_prev"
+            if (event.target.classList.contains("view_next")) {
+                console.log("view_next clicked");
+                selectNextImage();
+            }
+        });
     });
 
     const selectedSession = ref(null as MemorySession | null);
@@ -68,12 +84,12 @@
         }
 
         // cache next posts asynchronously in the background
-        const time_difference = 400;
+        const timeDifference = 400;
         const numberOfPostsToCache = 3;
         function cacheInBackground(postNr: number, offset: number) {
             setTimeout(() => {
                 renderPost(getPostJson((postNr + offset) % getNumberOfPosts()));
-            }, time_difference * offset);
+            }, timeDifference * offset);
         }
         for (let i = 1; i <= numberOfPostsToCache; i++) {
             cacheInBackground(number, i);

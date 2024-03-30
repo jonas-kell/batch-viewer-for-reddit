@@ -10,6 +10,8 @@
     const sessionsMetaStore = useSessionsMetaStore();
     import useKeysStore from "./../stores/keys";
 
+    // TODO Download progress
+
     const scope = "page";
     onMounted(() => {
         sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
@@ -68,6 +70,7 @@
         } else {
             toastr.error("Post to start with not set correctly");
         }
+        generateURL(); // advance url after download
     }
 
     const proxyUrl = computed(() => {

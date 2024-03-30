@@ -7,10 +7,6 @@
     <br />
     <br />
     <br />
-    <span> Merge: <RouterLink to="/merge">Merge multiple collections</RouterLink></span>
-    <br />
-    <br />
-    <br />
     <span> Manage Local Sessions: <RouterLink to="/sessions">Load or create a viewing session</RouterLink></span>
     <br />
     <br />

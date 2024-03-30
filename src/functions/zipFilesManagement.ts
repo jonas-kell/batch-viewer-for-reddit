@@ -6,6 +6,7 @@ import { decryptBlob, encryptBlob, getRandomIvString } from "./encrypt";
 import { requestMediaOrApiData } from "./archiveMedia";
 import { hashBlob } from "./hash";
 import { getSessionPostsDirectoryHandle } from "./opfs";
+import useProgressStore from "./../stores/progress";
 
 const contentsZipFileName = "contents.json";
 
@@ -36,9 +37,13 @@ export async function downloadMediaAndGenerateZipFile(
     proxyHost: string | null = null,
     scope: string
 ): Promise<Blob> {
+    useProgressStore().reset();
+
     var zip = new JSZip();
     await Promise.all(
         postsArray.map(async (post) => {
+            useProgressStore().addTarget();
+
             var link = post.media_url;
 
             let blob = null;
@@ -47,6 +52,7 @@ export async function downloadMediaAndGenerateZipFile(
             } catch (_) {}
 
             if (blob == null) {
+                useProgressStore().addError();
                 return Promise.resolve(0);
             } else {
                 const file_extension = link.substring(link.lastIndexOf("."));
@@ -66,8 +72,10 @@ export async function downloadMediaAndGenerateZipFile(
 
                     zip.file(hash_string + file_extension, blob);
 
+                    useProgressStore().addSuccess();
                     return Promise.resolve(1);
                 } else {
+                    useProgressStore().addError();
                     return Promise.resolve(0);
                 }
             }

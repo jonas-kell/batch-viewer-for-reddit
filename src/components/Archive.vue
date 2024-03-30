@@ -9,8 +9,8 @@
     import { DownloadSessionState, generateRedditApiURL, processPosts } from "../functions/archiveMedia";
     const sessionsMetaStore = useSessionsMetaStore();
     import useKeysStore from "./../stores/keys";
-
-    // TODO Download progress
+    import useProgressStore from "./../stores/progress";
+    const progressStore = useProgressStore();
 
     const scope = "page";
     onMounted(() => {
@@ -40,37 +40,49 @@
     const urlOutput = ref("");
     const urlOutputApi = ref("");
 
+    const downloadRunning = ref(false);
+
     async function processPostsAction() {
-        generateURL();
+        downloadRunning.value = true;
+        try {
+            generateURL();
 
-        const startWithPost = downloadSessionState.value.start_with_post;
+            const startWithPost = downloadSessionState.value.start_with_post;
 
-        // funny, this changed recently and broke the app
-        if (startWithPost == "" || startWithPost.length == 6 || startWithPost.length == 7) {
-            toastr.info(
-                `URL for scraping subreddit "${downloadSessionState.value.subreddit_name}" for next set of posts` +
-                    (startWithPost ? ` after the post with the id ${startWithPost}` : "")
-            );
-
-            const content = await processPosts(downloadSessionState.value, proxyHostAddress.value, scope);
-            const filename = "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
-
-            if (selectedSession.value == null) {
-                downloadBlob(content, filename);
-                toastr.info("Zip downloaded");
-            } else {
-                (content as any).name = filename;
-                const file = content as File;
-                await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
-                await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+            // funny, this changed recently and broke the app
+            if (startWithPost == "" || startWithPost.length == 6 || startWithPost.length == 7) {
                 toastr.info(
-                    "Stored " + filename + " successfully into the session data files of session: " + selectedSession.value.name
+                    `URL for scraping subreddit "${downloadSessionState.value.subreddit_name}" for next set of posts` +
+                        (startWithPost ? ` after the post with the id ${startWithPost}` : "")
                 );
+
+                const content = await processPosts(downloadSessionState.value, proxyHostAddress.value, scope);
+                const filename =
+                    "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
+
+                if (selectedSession.value == null) {
+                    downloadBlob(content, filename);
+                    toastr.info("Zip downloaded");
+                } else {
+                    (content as any).name = filename;
+                    const file = content as File;
+                    await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
+                    await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+                    toastr.info(
+                        "Stored " +
+                            filename +
+                            " successfully into the session data files of session: " +
+                            selectedSession.value.name
+                    );
+                }
+            } else {
+                toastr.error("Post to start with not set correctly");
             }
-        } else {
-            toastr.error("Post to start with not set correctly");
+            generateURL(); // advance url after download
+        } catch (_) {
+            downloadRunning.value = false;
         }
-        generateURL(); // advance url after download
+        downloadRunning.value = false;
     }
 
     const proxyUrl = computed(() => {
@@ -192,7 +204,26 @@
         URL of the corresponding api endpoint<br />
         <input type="text" disabled style="width: 60%" v-model="urlOutputApi" />
 
-        <button style="color: darkcyan" @click="processPostsAction">Process one set of Posts</button>
+        <button
+            :style="{
+                background: downloadRunning ? '' : 'green',
+            }"
+            :disabled="downloadRunning"
+            @click="processPostsAction"
+        >
+            Process one set of Posts
+        </button>
+
+        <div v-if="downloadRunning">
+            <br />
+            <br />
+            <b>Progress: </b> <span>Target: {{ progressStore.filesToDownload }}</span>
+            <span style="color: green; margin-left: 2em">Success: {{ progressStore.fileSuccess }}</span>
+            <span style="color: red; margin-left: 2em">Error: {{ progressStore.fileError }}</span>
+            <span style="color: darkgoldenrod; margin-left: 2em">
+                Pending: {{ progressStore.filesToDownload - progressStore.fileSuccess - progressStore.fileError }}
+            </span>
+        </div>
 
         <br />
         <br />

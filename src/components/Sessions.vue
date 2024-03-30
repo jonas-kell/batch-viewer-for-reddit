@@ -149,7 +149,11 @@
         <br />
         <br />
         Files stored in the session:
-        <!-- TODO -->
+        <ul v-if="selectedSession != null">
+            <li v-for="entry in selectedSession.file_meta">
+                <b>{{ entry.name }} </b> ({{ sizeToString(entry.size) }})
+            </li>
+        </ul>
     </div>
 </template>
 

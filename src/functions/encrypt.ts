@@ -30,7 +30,7 @@ export async function keyFromPassword(password: string): Promise<CryptoKey> {
         });
 }
 
-export async function encryptText(text: string, iv_string: string, scope: string = "page"): Promise<string> {
+export async function encryptText(text: string, iv_string: string, scope: string): Promise<string> {
     if (!useKeysStore().encryptionOn(scope)) {
         return text;
     }
@@ -55,7 +55,7 @@ function uint8ArrayToIvString(array: Uint8Array): string {
     return arrayBufferToHexString(array);
 }
 
-export async function decryptText(text: string, iv_string: string, scope: string = "page") {
+export async function decryptText(text: string, iv_string: string, scope: string) {
     if (!useKeysStore().encryptionOn(scope)) {
         return text;
     }
@@ -76,7 +76,7 @@ export async function decryptText(text: string, iv_string: string, scope: string
     return dec.decode(decrypted);
 }
 
-export async function encryptBlob(blob: Blob, iv_string: string, scope: string = "page"): Promise<Blob> {
+export async function encryptBlob(blob: Blob, iv_string: string, scope: string): Promise<Blob> {
     if (!useKeysStore().encryptionOn(scope)) {
         return blob;
     }
@@ -93,7 +93,7 @@ export async function encryptBlob(blob: Blob, iv_string: string, scope: string =
         });
 }
 
-export async function decryptBlob(blob: Blob, iv_string: string, scope: string = "page"): Promise<Blob> {
+export async function decryptBlob(blob: Blob, iv_string: string, scope: string): Promise<Blob> {
     if (!useKeysStore().encryptionOn(scope)) {
         return blob;
     }

@@ -4,7 +4,7 @@ import { ref } from "vue";
 export default defineStore("keys", () => {
     const activeKeys = ref({} as { [key: string]: CryptoKey });
 
-    function setKey(scope: string = "page", password: string) {
+    function setKey(scope: string, password: string) {
         if (password == "") {
             unsetKey(scope);
         } else {
@@ -13,11 +13,11 @@ export default defineStore("keys", () => {
         }
     }
 
-    function unsetKey(scope: string = "page") {
+    function unsetKey(scope: string) {
         delete activeKeys.value[scope];
     }
 
-    function encryptionOn(scope: string = "page") {
+    function encryptionOn(scope: string) {
         if (activeKeys.value[scope] == undefined || activeKeys.value[scope] == null) {
             return false;
         } else {
@@ -25,7 +25,7 @@ export default defineStore("keys", () => {
         }
     }
 
-    function getKey(scope: string = "page"): CryptoKey {
+    function getKey(scope: string): CryptoKey {
         return activeKeys.value[scope];
     }
 

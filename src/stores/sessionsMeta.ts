@@ -8,7 +8,7 @@ import toastr from "toastr";
 export default defineStore("keys", () => {
     const sessions = ref({} as { [key: string]: { [key: string]: MemorySession } });
 
-    function getSession(sessionName: string = "page", scope: string = "page"): MemorySession | null {
+    function getSession(sessionName: string = "page", scope: string): MemorySession | null {
         let obj = sessions.value[scope] ?? {};
         let res = obj[sessionName];
 
@@ -18,7 +18,7 @@ export default defineStore("keys", () => {
         return null;
     }
 
-    async function createSession(scope: string = "page") {
+    async function createSession(scope: string) {
         let sessionName = "Session_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "");
 
         await createSessionOPFS(sessionName, scope);
@@ -28,7 +28,7 @@ export default defineStore("keys", () => {
         await deleteSessionOPFS(session.name);
     }
 
-    function sessionSelectableCheck(sessionName: string, scope: string = "page") {
+    function sessionSelectableCheck(sessionName: string, scope: string) {
         if (Object.keys(sessions.value[scope]).includes(sessionName)) {
             if (sessions.value[scope][sessionName].can_be_decrypted ?? false) {
                 return true;

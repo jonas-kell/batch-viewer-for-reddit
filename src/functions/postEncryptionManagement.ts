@@ -18,7 +18,7 @@ const encryptedPostObjects = ["id", "author", "direct_link", "title", "media_url
     | "subreddit"
 )[];
 
-export async function decryptPostObject(post: Post, scope: string = "page") {
+export async function decryptPostObject(post: Post, scope: string) {
     let result_post = {} as Post;
 
     // clone
@@ -44,7 +44,7 @@ export async function decryptPostObject(post: Post, scope: string = "page") {
     return result_post;
 }
 
-export async function encryptPostObject(post: Post, scope: string = "page") {
+export async function encryptPostObject(post: Post, scope: string) {
     let result_post = {} as Post;
 
     // clone

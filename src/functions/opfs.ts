@@ -23,7 +23,7 @@ async function getSessionPostsDirectoryHandle(sessionNameOrFileName: string) {
     return null;
 }
 
-export async function parseSessionsMetaFromFilesystem(scope: string = "page") {
+export async function parseSessionsMetaFromFilesystem(scope: string) {
     const sessionDirHandle = await getSessionDirectoryHandle();
 
     let res = {} as { [key: string]: MemorySession };
@@ -89,7 +89,7 @@ function getSessionFileNameStem(sessionNameOrFileName: string): string {
     return sessionNameOrFileName.split(".")[0];
 }
 
-export async function createSession(sessionNameOrFileName: string, scope: string = "page") {
+export async function createSession(sessionNameOrFileName: string, scope: string) {
     const filename = getSessionMetaFilename(sessionNameOrFileName);
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(filename, {
@@ -123,7 +123,7 @@ export async function deleteSession(sessionNameOrFileName: string) {
     toastr.success(`Deleted Session ${sessionNameOrFileName}`);
 }
 
-export async function includePostsFileInSessionAndUploadToOPFS(file: File, session: MemorySession, scope: string = "page") {
+export async function includePostsFileInSessionAndUploadToOPFS(file: File, session: MemorySession, scope: string) {
     const filename = file.name;
     const dataDirHandle = await getSessionPostsDirectoryHandle(session.name);
 
@@ -173,7 +173,7 @@ export async function includePostsFileInSessionAndUploadToOPFS(file: File, sessi
     const updatedMeta: FileMetaEntry = { size: reloaded_file.size, name: filename };
     session.file_meta[filename] = updatedMeta;
 
-    await storeSessionToOpfs(session); // write out meta information
+    await storeSessionToOpfs(session, scope); // write out meta information
 }
 
 export function getSessionDataFilesMeta(session: MemorySession | null): FileMeta {
@@ -203,7 +203,7 @@ export function getSessionDataFileCompleteSize(session: MemorySession | null): n
     return size;
 }
 
-async function storeSessionToOpfs(session: MemorySession, scope: string = "page") {
+async function storeSessionToOpfs(session: MemorySession, scope: string) {
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(getSessionMetaFilename(session.name));
     const writable = await sessionFileHandle.createWritable();

@@ -1,132 +1,77 @@
 <script setup lang="ts">
-    // $(document).ready(() => {
-    //     document.getElementById("update_decryption_key").addEventListener("click", async () => {
-    //         await set_key_to_use("decryption_key", "update_decryption_key");
-    //         selectSession(); // clear page scope session
+    import PasswordField from "./PasswordField.vue";
+    import toastr from "toastr";
+    import useSessionsMetaStore from "./../stores/sessionsMeta";
+    import { computed, onMounted, ref } from "vue";
+    import { getSessionDataFileCompleteSize, getSessionNumberOfDataFileNames, sizeToString } from "../functions/opfs";
+    import { fileSystemAccessApiPicker } from "./../functions/interactBrowser";
+    import { MemorySession } from "../functions/interfaces";
+    const sessionsMetaStore = useSessionsMetaStore();
 
-    //         update_session_display();
-    //     });
+    const scope = "page";
+    onMounted(() => {
+        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+    });
 
-    //     document.getElementById("create_session").addEventListener("click", async () => {
-    //         await createSession();
+    const sessions = computed(() => {
+        return sessionsMetaStore.getSessions(scope);
+    });
 
-    //         update_session_display();
-    //     });
+    async function createSession() {
+        await sessionsMetaStore.createSession(scope);
 
-    //     document.getElementById("open_zip").addEventListener("click", async () => {
-    //         let fileHandle;
-    //         [fileHandle] = await window.showOpenFilePicker();
-    //         const file = await fileHandle.getFile();
-    //         const filename = file.name;
+        toastr.success(`Created Session`);
+    }
 
-    //         if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
-    //             await storeDataFileInSelectedSessionsOpfsFolder(file);
-    //             toastr.info("Read in file: " + filename);
-    //         } else {
-    //             toastr.error("Data file not storable: " + filename);
-    //         }
+    async function deleteSession(session: MemorySession) {
+        let confirmed = confirm("Do you really want to delete Session " + session.name + "? \n Press OK to continue");
 
-    //         update_session_display();
-    //     });
+        if (confirmed) {
+            sessionsMetaStore.deleteSession(session, scope);
+            selectedSession.value = null;
+            toastr.success(`Deleted Session ${session.name}`);
+        }
+    }
 
-    //     $("#zip_filepicker").on("change", async function (evt) {
-    //         var files = evt.target.files;
-    //         const nr_zip_files = files.length;
+    const selectedSession = ref(null as MemorySession | null);
+    function selectSession(session: MemorySession) {
+        selectedSession.value = session;
+    }
 
-    //         // read in zip files
-    //         for (var i = 0; i < nr_zip_files; i++) {
-    //             const filename = files[i].name;
+    async function zipFilePickerHandler() {
+        if (selectedSession.value != null) {
+            const [file, filename] = await fileSystemAccessApiPicker();
 
-    //             if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
-    //                 await storeDataFileInSelectedSessionsOpfsFolder(files[i]);
-    //                 toastr.info("Read in file: " + filename);
-    //             } else {
-    //                 toastr.error("Data file not storable: " + filename);
-    //             }
-    //         }
+            if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
+                await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
+                toastr.info("Read in file: " + filename);
+            } else {
+                toastr.error("Data file not storable: " + filename);
+            }
 
-    //         update_session_display();
-    //     });
+            sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+        }
+    }
 
-    //     update_session_display();
-    // });
+    async function filePickerChangeHandler(evt: { target: { files: File[] } }) {
+        if (selectedSession.value != null) {
+            const files = evt.target.files;
+            const nr_zip_files = files.length;
 
-    // async function update_session_display() {
-    //     let list = $("#session_list");
-    //     let pickers = $("#file_pickers");
-    //     let files_list = $("#loaded_files");
+            // read in zip files
+            for (var i = 0; i < nr_zip_files; i++) {
+                const filename = files[i].name;
 
-    //     // reset sessions array
-    //     list.empty();
-    //     files_list.empty();
-    //     pickers.hide();
+                if (filename.match(/[a-z]+_\d+(_encrypted)?.zip/g)) {
+                    await sessionsMetaStore.addFileToSession(selectedSession.value, files[i], scope);
 
-    //     // rebuild sessions array
-    //     let sessionsMeta = await recreateSessionsMeta();
-    //     let selectedSessionName = await getSelectedSessionName();
-
-    //     // render
-    //     for (const parsedSession of Object.values(sessionsMeta)) {
-    //         // render element
-    //         const style = parsedSession.name == selectedSessionName ? "background: green" : "";
-    //         const content = `<tr>
-    //                 <td style="${style}">${parsedSession.name}</td>
-    //                 <td style="${style}">${parsedSession.is_encrypted ? "Yes" : "No"} ${
-    //             parsedSession.is_encrypted && parsedSession.can_be_decrypted ? "Decr." : ""
-    //         }</td>
-    //                 <td style="${style}">${Object.keys(parsedSession.posts).length}</td>
-    //                 <td style="${style}">${await getSessionNumberOfDataFileNames(parsedSession.name)}</td>
-    //                 <td style="${style}">${sizeToString(await getSessionDataFileCompleteSize(parsedSession.name))}</td>
-    //                 <td style="${style}">${
-    //             parsedSession.can_be_decrypted
-    //                 ? `<button class="select_session" file_name="${parsedSession.name}">Select</button>`
-    //                 : ""
-    //         }</td>
-    //                 <td style="${style}"><button class="delete_session" file_name="${parsedSession.name}">Delete</button></td>
-    //             </tr>`;
-
-    //         // render file manager
-    //         if (parsedSession.name == getSelectedSessionName()) {
-    //             // show file pickers
-    //             pickers.show();
-
-    //             // update the content list
-    //             for (const file_meta of Object.values(await getSessionDataFilesMeta(getSelectedSessionName()))) {
-    //                 files_list.append("<li><b>" + file_meta.name + "</b> (" + sizeToString(file_meta.size) + ")</li>");
-    //             }
-    //         }
-
-    //         // store results
-    //         list.append(content);
-    //     }
-
-    //     update_event_listeners();
-    // }
-
-    // function update_event_listeners() {
-    //     $(".delete_session").off("click");
-    //     $(".delete_session").on("click", async function () {
-    //         let fileNameToDelete = $(this).attr("file_name");
-
-    //         let confirmed = confirm("Do you really want to delete Session " + fileNameToDelete + "? \n Press OK to continue");
-
-    //         if (confirmed) {
-    //             await deleteSession(fileNameToDelete);
-
-    //             update_session_display();
-    //         }
-    //     });
-
-    //     $(".select_session").off("click");
-    //     $(".select_session").on("click", async function () {
-    //         let fileNameToSelect = $(this).attr("file_name");
-
-    //         // scope is automatically "page" scope
-    //         if (selectSession(fileNameToSelect)) {
-    //             update_session_display();
-    //         }
-    //     });
-    // }
+                    toastr.info("Read in file: " + filename);
+                } else {
+                    toastr.error("Data file not storable: " + filename);
+                }
+            }
+        }
+    }
 </script>
 
 <template>
@@ -136,14 +81,17 @@
 
     <br />
     <br />
-    Session En-/Decryption key (If session is is is intended to be encrypted, this needs to be set):<br />
-    <input type="password" id="decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
-    <button id="update_decryption_key">Update</button>
+    <PasswordField
+        scope="page"
+        hint="Insert Encryption Key"
+        hintActivated="Encryption Activated"
+        description="Session En-/Decryption key (If session is is is intended to be encrypted, this needs to be set):"
+    ></PasswordField>
 
     <br />
     <br />
     Locally stored Sessions:
-    <button id="create_session" style="margin-left: 3em">Create</button>
+    <button style="margin-left: 3em" @click="createSession">Create</button>
 
     <br />
     <br />
@@ -161,7 +109,29 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="session_list"></tbody>
+                <tbody>
+                    <tr
+                        v-for="session in sessions"
+                        :class="{
+                            selected: selectedSession && selectedSession.name == session.name,
+                        }"
+                    >
+                        <td>{{ session.name }}</td>
+                        <td>
+                            {{ session.is_encrypted ? "Yes" : "No" }}
+                            {{ session.is_encrypted && session.can_be_decrypted ? "Decr." : "" }}
+                        </td>
+                        <td>{{ Object.keys(session.posts).length }}</td>
+                        <td>{{ getSessionNumberOfDataFileNames(session) }}</td>
+                        <td>{{ sizeToString(getSessionDataFileCompleteSize(session)) }}</td>
+                        <td>
+                            <button class="select_session" v-if="session.can_be_decrypted" @click="selectSession(session)">
+                                Select
+                            </button>
+                        </td>
+                        <td><button class="delete_session" @click="deleteSession(session)">Delete</button></td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -169,18 +139,22 @@
     <br />
     <br />
     <hr />
-    <div id="file_pickers" hidden>
+    <div id="file_pickers" :hidden="selectedSession == null">
         Add (basically unlimited large) single zip files (chrome only 'File System Access API'). <br />
-        <button id="open_zip">Open Zip</button>
+        <button @click="zipFilePickerHandler">Open Zip</button>
         <br />
         <br />
         Add multiple zip files, that can not be larger than around 50mb each (hopefully every browser and platform). <br />
-        <input type="file" id="zip_filepicker" name="zip_filepicker" multiple />
+        <input type="file" multiple @change="(evt:any) => filePickerChangeHandler(evt)" />
         <br />
         <br />
         Files stored in the session:
-        <ul id="loaded_files"></ul>
+        <!-- TODO -->
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+    tr.selected td {
+        background-color: green;
+    }
+</style>

@@ -2,13 +2,18 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { MemorySession } from "../functions/interfaces";
 import useKeysStore from "./keys";
-import { createSession as createSessionOPFS, deleteSession as deleteSessionOPFS } from "./../functions/opfs";
+import {
+    createSession as createSessionOPFS,
+    deleteSession as deleteSessionOPFS,
+    parseSessionsMetaFromFilesystem,
+    includePostsFileInSessionAndUploadToOPFS,
+} from "./../functions/opfs";
 import toastr from "toastr";
 
-export default defineStore("keys", () => {
+export default defineStore("sessionsMeta", () => {
     const sessions = ref({} as { [key: string]: { [key: string]: MemorySession } });
 
-    function getSession(sessionName: string = "page", scope: string): MemorySession | null {
+    function getSession(sessionName: string, scope: string): MemorySession | null {
         let obj = sessions.value[scope] ?? {};
         let res = obj[sessionName];
 
@@ -18,14 +23,43 @@ export default defineStore("keys", () => {
         return null;
     }
 
+    function getSessionNames(scope: string): string[] {
+        let obj = sessions.value[scope] ?? {};
+
+        return Object.keys(obj);
+    }
+
+    function getSessions(scope: string): MemorySession[] {
+        let agg: MemorySession[] = [];
+
+        getSessionNames(scope).forEach((sessionName) => {
+            const session = getSession(sessionName, scope);
+
+            if (session) {
+                agg.push(session);
+            }
+        });
+
+        return agg;
+    }
+
     async function createSession(scope: string) {
         let sessionName = "Session_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "");
 
         await createSessionOPFS(sessionName, scope);
+        await reParseLocalSessionCacheFromFiles(scope);
     }
 
-    async function deleteSession(session: MemorySession) {
+    async function deleteSession(session: MemorySession, scope: string) {
         await deleteSessionOPFS(session.name);
+        await reParseLocalSessionCacheFromFiles(scope);
+    }
+
+    /**
+     *  DOES NOT RE-COMPUTE SESSIONS. MUST DO MANUALLY
+     */
+    async function addFileToSession(session: MemorySession, file: File, scope: string) {
+        await includePostsFileInSessionAndUploadToOPFS(file, session, scope);
     }
 
     function sessionSelectableCheck(sessionName: string, scope: string) {
@@ -45,10 +79,19 @@ export default defineStore("keys", () => {
         return false;
     }
 
+    async function reParseLocalSessionCacheFromFiles(scope: string) {
+        let newValues = await parseSessionsMetaFromFilesystem(scope);
+        sessions.value[scope] = newValues;
+    }
+
     return {
         getSession,
         createSession,
         deleteSession,
         sessionSelectableCheck,
+        getSessionNames,
+        getSessions,
+        reParseLocalSessionCacheFromFiles,
+        addFileToSession,
     };
 });

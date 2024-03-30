@@ -40,7 +40,11 @@ export async function downloadMediaAndGenerateZipFile(
         postsArray.map(async (post) => {
             var link = post.media_url;
 
-            let blob = (await requestMediaOrApiData(link, proxyHost)) as Blob | null;
+            let blob = null;
+            try {
+                blob = (await requestMediaOrApiData(link, proxyHost)) as Blob | null;
+            } catch (_) {}
+
             if (blob == null) {
                 return Promise.resolve(0);
             } else {

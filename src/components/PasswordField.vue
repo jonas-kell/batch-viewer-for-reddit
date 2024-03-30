@@ -13,9 +13,13 @@
             type: String,
             required: true,
         },
+        hintActivated: {
+            type: String,
+            required: true,
+        },
         description: {
             type: String,
-            default: "Decryption key (If input is encrypted, this needs to be set):",
+            required: true,
         },
     });
 
@@ -23,6 +27,7 @@
 
     function performUpdate() {
         keysStore.setKey(props.scope, internalPassword.value);
+        internalPassword.value = "";
     }
 
     const memoryPasswordSet = computed(() => {
@@ -34,12 +39,19 @@
 
 <template>
     {{ description }}<br />
-    <input type="password" style="width: 40%" :placeholder="hint" v-model="internalPassword" />
+    <input
+        type="password"
+        style="width: 40%"
+        :placeholder="memoryPasswordSet ? hintActivated : hint"
+        v-model="internalPassword"
+        :disabled="memoryPasswordSet"
+    />
     <button
         @click="performUpdate"
         :style="{
             'background-color': memoryPasswordSet ? 'chartreuse' : '',
         }"
+        style="margin-left: 1em"
     >
         Update
     </button>

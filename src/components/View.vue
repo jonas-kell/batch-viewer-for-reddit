@@ -225,7 +225,12 @@
 
     <h2>Display Contents</h2>
     <br />
-    <PasswordField scope="page" hint="Decryption Key"></PasswordField>
+    <PasswordField
+        scope="page"
+        hint="Insert Decryption Key"
+        hintActivated="Decryption Key set for use"
+        description="Decryption key (If input is encrypted, this needs to be set):"
+    ></PasswordField>
 
     <br />
     <br />

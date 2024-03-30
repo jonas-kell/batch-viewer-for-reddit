@@ -33,7 +33,7 @@ export async function parseSessionsMetaFromFilesystem(scope: string) {
         // any to silence error, but values() exists on FileSystemDirectoryHandle.... https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle/values
 
         // TODO use different regex?
-        if ((entry.kind = "file" && entry.name.match(/Session_\d*(_encrypted)?.json/g))) {
+        if (entry.kind == "file" && entry.name.match(/Session_\d*(_encrypted)?.json/g)) {
             const file: File = await entry.getFile();
 
             // parse info
@@ -119,8 +119,6 @@ export async function deleteSession(sessionNameOrFileName: string) {
     if (dataDirHandle) {
         await (await navigator.storage.getDirectory()).removeEntry(dataDirHandle.name, { recursive: true }); // TODO if data dir is shared, this could cause problems. Keep in mind
     }
-
-    toastr.success(`Deleted Session ${sessionNameOrFileName}`);
 }
 
 export async function includePostsFileInSessionAndUploadToOPFS(file: File, session: MemorySession, scope: string) {

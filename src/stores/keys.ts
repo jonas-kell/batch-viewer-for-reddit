@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { keyFromPassword } from "../functions/encrypt";
+import toastr from "toastr";
 
 export default defineStore("keys", () => {
     const activeKeys = ref(
@@ -15,11 +16,13 @@ export default defineStore("keys", () => {
     async function setKey(scope: string, password: string) {
         if (password == "") {
             unsetKey(scope);
+            toastr.success("Encryption disabled");
         } else {
             activeKeys.value[scope] = {
                 key: await keyFromPassword(password),
                 password: password,
             };
+            toastr.success("Encryption key set and enabled");
         }
     }
 

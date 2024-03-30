@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import PasswordField from "./PasswordField.vue";
+    import SessionInfo from "./SessionInfo.vue";
     import toastr from "toastr";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
     import { computed, onMounted, ref } from "vue";
@@ -148,12 +149,7 @@
         <input type="file" multiple @change="(evt:any) => filePickerChangeHandler(evt)" />
         <br />
         <br />
-        Files stored in the session:
-        <ul v-if="selectedSession != null">
-            <li v-for="entry in selectedSession.file_meta">
-                <b>{{ entry.name }} </b> ({{ sizeToString(entry.size) }})
-            </li>
-        </ul>
+        <SessionInfo :session="selectedSession"></SessionInfo>
     </div>
 </template>
 

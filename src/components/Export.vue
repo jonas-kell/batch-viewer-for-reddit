@@ -5,6 +5,7 @@
     import SessionSelectButtons from "./SessionSelectButtons.vue";
     import { MemorySession } from "../functions/interfaces";
     import toastr from "toastr";
+    import SessionInfo from "./SessionInfo.vue";
 
     const sessionsMetaStore = useSessionsMetaStore();
 
@@ -63,6 +64,9 @@
         @sessionSelected="handleSourceSessionSelected"
     ></SessionSelectButtons>
 
+    <br />
+    <SessionInfo :session="selectedSessionSource" :numPosts="true"></SessionInfo>
+
     <br /><br />
     <h3>Output Sessions</h3>
     <br />
@@ -80,6 +84,9 @@
         @sessionSelected="handleTargetSessionSelected"
         :reset="resetOutput"
     ></SessionSelectButtons>
+
+    <br />
+    <SessionInfo :session="selectedSessionTarget" :numPosts="true"></SessionInfo>
 </template>
 
 <style scoped></style>

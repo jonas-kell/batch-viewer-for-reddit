@@ -28,7 +28,7 @@ export async function exportFromSourceToTarget(
 
     // TODO notify about skipped entries
 
-    const maxZipSize = 3000000;
+    const maxZipSize = 45000000;
     let allPostsProcessed = false;
     const numberOfPostsToProcess = idsToTransfer.length;
     useProgressStore().setTarget(numberOfPostsToProcess);

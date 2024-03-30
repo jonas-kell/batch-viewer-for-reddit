@@ -7,9 +7,10 @@
     import { copyToClipboard, downloadBlob } from "../functions/interactBrowser";
     import toastr from "toastr";
     import { DownloadSessionState, generateRedditApiURL, processPosts } from "../functions/archiveMedia";
-    const sessionsMetaStore = useSessionsMetaStore();
-    import useKeysStore from "./../stores/keys";
     import useProgressStore from "./../stores/progress";
+    import { generateZipFileName } from "../functions/zipFilesManagement";
+
+    const sessionsMetaStore = useSessionsMetaStore();
     const progressStore = useProgressStore();
 
     const scope = "page";
@@ -57,8 +58,7 @@
                 );
 
                 const content = await processPosts(downloadSessionState.value, proxyHostAddress.value, scope);
-                const filename =
-                    "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
+                const filename = generateZipFileName(scope);
 
                 if (selectedSession.value == null) {
                     downloadBlob(content, filename);
@@ -79,7 +79,8 @@
                 toastr.error("Post to start with not set correctly");
             }
             generateURL(); // advance url after download
-        } catch (_) {
+        } catch (error) {
+            console.error(error);
             downloadRunning.value = false;
         }
         downloadRunning.value = false;

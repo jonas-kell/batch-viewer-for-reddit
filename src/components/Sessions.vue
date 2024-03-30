@@ -149,7 +149,7 @@
         <input type="file" multiple @change="(evt:any) => filePickerChangeHandler(evt)" />
         <br />
         <br />
-        <SessionInfo :session="selectedSession"></SessionInfo>
+        <SessionInfo v-if="selectedSession" :session="selectedSession"></SessionInfo>
     </div>
 </template>
 

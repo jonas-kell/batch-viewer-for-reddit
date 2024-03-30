@@ -8,7 +8,7 @@ import { hashBlob } from "./hash";
 import { getSessionPostsDirectoryHandle } from "./opfs";
 import useProgressStore from "./../stores/progress";
 
-const contentsZipFileName = "contents.json";
+export const contentsZipFileName = "contents.json";
 
 export async function readInZipFile(file: File, scope: string) {
     let postJson = [] as Post[];
@@ -122,4 +122,8 @@ export async function loadBlobFromStorage(session: MemorySession, post: Post, sc
         return mediaContents;
     }
     return null;
+}
+
+export function generateZipFileName(scope: string) {
+    return "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
 }

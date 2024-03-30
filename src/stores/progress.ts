@@ -16,6 +16,10 @@ export default defineStore("progress", () => {
         filesToDownload.value += 1;
     }
 
+    function setTarget(target: number) {
+        filesToDownload.value = target;
+    }
+
     function addSuccess() {
         fileSuccess.value += 1;
     }
@@ -29,6 +33,7 @@ export default defineStore("progress", () => {
         addSuccess,
         addError,
         addTarget,
+        setTarget,
         filesToDownload,
         fileSuccess,
         fileError,

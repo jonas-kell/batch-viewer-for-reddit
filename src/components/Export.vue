@@ -6,8 +6,11 @@
     import { MemorySession } from "../functions/interfaces";
     import toastr from "toastr";
     import SessionInfo from "./SessionInfo.vue";
+    import { exportFromSourceToTarget } from "./../functions/exportContent";
+    import useProgressStore from "./../stores/progress";
 
     const sessionsMetaStore = useSessionsMetaStore();
+    const progressStore = useProgressStore();
 
     const scopeSource = "source";
     const scopeTarget = "target";
@@ -17,6 +20,7 @@
     });
 
     const resetOutput = ref(false);
+    const conversionRunning = ref(false);
 
     const selectedSessionSource = ref(null as MemorySession | null);
     function handleSourceSessionSelected(session: MemorySession | null) {
@@ -41,6 +45,24 @@
             }
         }
     }
+
+    async function processConversion() {
+        conversionRunning.value = true;
+        try {
+            if (selectedSessionSource.value != null) {
+                await exportFromSourceToTarget(
+                    selectedSessionSource.value,
+                    scopeSource,
+                    selectedSessionTarget.value,
+                    scopeTarget
+                );
+            }
+        } catch (error) {
+            console.error(error);
+            conversionRunning.value = false;
+        }
+        conversionRunning.value = false;
+    }
 </script>
 
 <template>
@@ -54,20 +76,19 @@
         :scope="scopeSource"
         hint="Insert Decryption Key"
         hintActivated="Encryption Activated"
-        description="Decryption key (Needed if SOurce is encrypted):"
+        description="Decryption key (Needed if Source is encrypted):"
     ></PasswordField>
     <br />
     <br />
     <SessionSelectButtons
-        defaultSelectionLabel="Download"
+        defaultSelectionLabel="Please Choose Session"
         :scope="scopeSource"
         @sessionSelected="handleSourceSessionSelected"
     ></SessionSelectButtons>
 
     <br />
-    <SessionInfo :session="selectedSessionSource" :numPosts="true"></SessionInfo>
+    <SessionInfo v-if="selectedSessionSource" :session="selectedSessionSource" :numPosts="true"></SessionInfo>
 
-    <br /><br />
     <h3>Output Sessions</h3>
     <br />
     <PasswordField
@@ -86,7 +107,31 @@
     ></SessionSelectButtons>
 
     <br />
-    <SessionInfo :session="selectedSessionTarget" :numPosts="true"></SessionInfo>
+    <SessionInfo v-if="selectedSessionTarget" :session="selectedSessionTarget" :numPosts="true"></SessionInfo>
+
+    <br />
+    <h3>Settings</h3>
+    <!-- TODO -->
+    <div style="width: 100%; text-align: center; padding-bottom: 10em">
+        <button
+            :style="{
+                background: conversionRunning || selectedSessionSource == null ? '' : 'green',
+            }"
+            :disabled="conversionRunning || selectedSessionSource == null"
+            @click="processConversion"
+        >
+            Export the stuff
+        </button>
+        <div v-if="conversionRunning">
+            <br />
+            <b>Progress: </b> <span>Target: {{ progressStore.filesToDownload }}</span>
+            <span style="color: green; margin-left: 2em">Success: {{ progressStore.fileSuccess }}</span>
+            <span style="color: red; margin-left: 2em">Error: {{ progressStore.fileError }}</span>
+            <span style="color: darkgoldenrod; margin-left: 2em">
+                Pending: {{ progressStore.filesToDownload - progressStore.fileSuccess - progressStore.fileError }}
+            </span>
+        </div>
+    </div>
 </template>
 
 <style scoped></style>

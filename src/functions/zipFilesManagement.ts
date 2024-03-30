@@ -1,10 +1,11 @@
 import JSZip from "jszip";
-import { Post } from "./interfaces";
+import { MemorySession, Post } from "./interfaces";
 import useKeysStore from "../stores/keys";
 import { decryptPostObject, encryptPostObject } from "./postEncryptionManagement";
-import { encryptBlob, getRandomIvString } from "./encrypt";
+import { decryptBlob, encryptBlob, getRandomIvString } from "./encrypt";
 import { requestMediaOrApiData } from "./archiveMedia";
 import { hashBlob } from "./hash";
+import { getSessionPostsDirectoryHandle } from "./opfs";
 
 const contentsZipFileName = "contents.json";
 
@@ -88,4 +89,29 @@ export async function downloadMediaAndGenerateZipFile(
     zip.file(contentsZipFileName, JSON.stringify(postsArray));
 
     return await zip.generateAsync({ type: "blob" });
+}
+
+export async function loadBlobFromStorage(session: MemorySession, post: Post, scope: string): Promise<Blob | null> {
+    const dataDirHandle = await getSessionPostsDirectoryHandle(session.name);
+
+    if (dataDirHandle) {
+        const zipFileHandle = await dataDirHandle.getFileHandle(post.zip_file_name);
+        const loadedZipFile = await zipFileHandle.getFile();
+
+        // regenerate blob from zip
+        let mediaContents = null;
+        await JSZip.loadAsync(loadedZipFile).then(async function (zip) {
+            mediaContents = (await zip.files[post.hash_filename].async("blob")) as Blob;
+        });
+
+        // no idea why this below works :sweat:
+        if (mediaContents) {
+            mediaContents = mediaContents as Blob;
+            mediaContents = mediaContents.slice(0, mediaContents.size, post.mime_type); // write original mime type back into
+            mediaContents = await decryptBlob(mediaContents, post.iv_string ?? "", scope);
+        }
+
+        return mediaContents;
+    }
+    return null;
 }

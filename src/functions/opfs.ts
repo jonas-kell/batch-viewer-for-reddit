@@ -12,7 +12,7 @@ async function getSessionDirectoryHandle() {
     return sessionDirHandle;
 }
 
-async function getSessionPostsDirectoryHandle(sessionNameOrFileName: string) {
+export async function getSessionPostsDirectoryHandle(sessionNameOrFileName: string) {
     if (sessionNameOrFileName != "") {
         const originPrivateFileSystem = await navigator.storage.getDirectory();
         const sessionDirHandle = await originPrivateFileSystem.getDirectoryHandle(getSessionFileNameStem(sessionNameOrFileName), {

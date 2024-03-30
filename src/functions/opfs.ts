@@ -153,6 +153,8 @@ export async function includePostsFileInSessionAndUploadToOPFS(file: File, sessi
         return;
     }
 
+    // TODO only include these if not already included?
+
     // append posts
     for (let post of filePostMetaInfo) {
         post.zip_file_name = filename; // remember what file the post is from

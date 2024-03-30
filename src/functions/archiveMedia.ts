@@ -1,4 +1,4 @@
-import { Post } from "./interfaces";
+import { MemorySession, Post } from "./interfaces";
 import { downloadMediaAndGenerateZipFile } from "./zipFilesManagement";
 import toastr from "toastr";
 
@@ -47,6 +47,7 @@ export function generateRedditApiURL(downloadState: DownloadSessionState, humanL
 }
 
 export async function processPosts(
+    session: MemorySession | null,
     downloadState: DownloadSessionState,
     proxyHost: string | null = null,
     scope: string
@@ -55,25 +56,35 @@ export async function processPosts(
 
     const jsonResponse: RedditApiResponse = (await requestMediaOrApiData(redditApiURL, proxyHost)) as RedditApiResponse; // cast should work here
 
+    let currentIds: string[] = [];
+    if (session != null) {
+        currentIds = Object.keys(session.posts);
+    }
+
     var outputArray: Post[] = [];
     jsonResponse["data"]["children"].forEach((post) => {
         const postMediaURL = mediaURL(post);
 
+        const id = post["data"]["name"]; // there is an extra id field. No idea why they are different and what the "t3_" really. Probably post type
+
         if (!(post["data"]["stickied"] ?? false) && postMediaURL != "") {
-            outputArray.push({
-                id: post["data"]["name"], // there is an extra id field. No idea why they are different and what the "t3_" really. Probably post type
-                author: post["data"]["author"] ?? "",
-                direct_link: `https://redd.it/${post["data"]["name"]}`,
-                title: post["data"]["title"] ?? "",
-                subreddit: post["data"]["subreddit_name_prefixed"] ?? "",
-                media_url: postMediaURL,
-                series_index: String(downloadState.archived_count),
-                hash_filename: "",
-                iv_string: "",
-                mime_type: "",
-                zip_file_name: "",
-            });
-            downloadState.archived_count += 1;
+            // not include multiple times
+            if (!currentIds.includes(id)) {
+                outputArray.push({
+                    id: id,
+                    author: post["data"]["author"] ?? "",
+                    direct_link: `https://redd.it/${post["data"]["name"]}`,
+                    title: post["data"]["title"] ?? "",
+                    subreddit: post["data"]["subreddit_name_prefixed"] ?? "",
+                    media_url: postMediaURL,
+                    series_index: String(downloadState.archived_count),
+                    hash_filename: "",
+                    iv_string: "",
+                    mime_type: "",
+                    zip_file_name: "",
+                });
+                downloadState.archived_count += 1;
+            }
         }
     });
 

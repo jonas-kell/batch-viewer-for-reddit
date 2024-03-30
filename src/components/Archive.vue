@@ -57,7 +57,12 @@
                         (startWithPost ? ` after the post with the id ${startWithPost}` : "")
                 );
 
-                const content = await processPosts(downloadSessionState.value, proxyHostAddress.value, scope);
+                const content = await processPosts(
+                    selectedSession.value,
+                    downloadSessionState.value,
+                    proxyHostAddress.value,
+                    scope
+                );
                 const filename = generateZipFileName(scope);
 
                 if (selectedSession.value == null) {
@@ -66,14 +71,11 @@
                 } else {
                     (content as any).name = filename;
                     const file = content as File;
+                    const sessionName = selectedSession.value.name; // gets unselected here ...
                     await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
                     await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
-                    toastr.info(
-                        "Stored " +
-                            filename +
-                            " successfully into the session data files of session: " +
-                            selectedSession.value.name
-                    );
+
+                    toastr.info("Stored " + filename + " successfully into the session data files of session: " + sessionName);
                 }
             } else {
                 toastr.error("Post to start with not set correctly");

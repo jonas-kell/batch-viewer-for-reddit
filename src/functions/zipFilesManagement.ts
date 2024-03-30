@@ -52,11 +52,11 @@ export async function downloadMediaAndGenerateZipFile(
 
                 if (useKeysStore().encryptionOn(scope)) {
                     post["iv_string"] = getRandomIvString();
+
+                    // encrypt before hashing to not be able to hash all files from reddit and compare
+                    blob = await encryptBlob(blob, post["iv_string"] ?? "", scope);
                 }
 
-                // encrypt before hashing to not be able to hash all files from reddit and compare
-                // if encryption is off, this doesn't do anything anyway
-                blob = await encryptBlob(blob, post["iv_string"] ?? "", scope);
                 if (blob) {
                     const hash_string = await hashBlob(blob);
 

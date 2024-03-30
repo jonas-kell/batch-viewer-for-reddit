@@ -1,5 +1,6 @@
 import { Post } from "./interfaces";
 import { downloadMediaAndGenerateZipFile } from "./zipFilesManagement";
+import toastr from "toastr";
 
 export interface DownloadSessionState {
     start_with_post: string;
@@ -79,8 +80,6 @@ export async function processPosts(
     // update the fields for the next step
     downloadState.count += 25;
     downloadState.start_with_post = jsonResponse["data"]["after"].substring(3); // removes the t3_ at the beginning
-
-    toastr.info("Information processed and advanced for next step");
 
     // download the images and zip them
     const zipBlob = await downloadMediaAndGenerateZipFile(outputArray, proxyHost, scope);

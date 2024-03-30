@@ -1,91 +1,157 @@
 <script setup lang="ts">
-    // $(document).ready(async () => {
-    //     document.getElementById("generate_url_action").addEventListener("click", () => {
-    //         var subreddit_name = document.getElementById("subreddit_name").value;
-    //         var start_with_post = document.getElementById("start_with_post").value;
+    import PasswordField from "./PasswordField.vue";
+    import SessionSelectButtons from "./SessionSelectButtons.vue";
+    import useSessionsMetaStore from "./../stores/sessionsMeta";
+    import { computed, onMounted, ref, watch } from "vue";
+    import { MemorySession } from "../functions/interfaces";
+    import { copyToClipboard, downloadBlob } from "../functions/interactBrowser";
+    import toastr from "toastr";
+    import { DownloadSessionState, generateRedditApiURL, processPosts } from "../functions/archiveMedia";
+    const sessionsMetaStore = useSessionsMetaStore();
+    import useKeysStore from "./../stores/keys";
 
-    //         show_scrape_subreddit_url(subreddit_name, start_with_post);
-    //     });
+    const scope = "page";
+    onMounted(() => {
+        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+        updateProxyReachability();
+    });
 
-    //     document.getElementById("copy_to_clipboard").addEventListener("click", () => {
-    //         copy_to_clipboard(document.getElementById("url_output").value);
-    //     });
+    const selectedSession = ref(null as MemorySession | null);
+    function handleSessionSelected(session: MemorySession | null) {
+        selectedSession.value = session;
+    }
 
-    //     document.getElementById("process_posts").addEventListener("click", () => {
-    //         var api_url = document.getElementById("api_url_output").value;
+    const downloadSessionState = ref({
+        count: 0,
+        archived_count: 0,
+        start_with_post: "",
+        subreddit_name: "mathmemes",
+    } as DownloadSessionState);
 
-    //         process_posts(api_url);
-    //     });
+    const proxyHostAddress = ref(localStorage.getItem("proxy_url") ?? "");
 
-    //     document.getElementById("update_encryption_key").addEventListener("click", async () => {
-    //         await set_key_to_use("encryption_key", "update_encryption_key");
+    function generateURL() {
+        urlOutputApi.value = generateRedditApiURL(downloadSessionState.value, false);
+        urlOutput.value = generateRedditApiURL(downloadSessionState.value, true);
+    }
 
-    //         selectSession(); // clear page scope session
+    const urlOutput = ref("");
+    const urlOutputApi = ref("");
 
-    //         await recreateSessionsMeta();
-    //     });
+    async function processPostsAction() {
+        generateURL();
 
-    //     $("#proxy_address").on("change", async function () {
-    //         let value = $(this).val();
+        const startWithPost = downloadSessionState.value.start_with_post;
 
-    //         await set_proxy_url(value);
-    //     });
-    //     let cached_proxy_url = localStorage.getItem("proxy_url");
-    //     if (cached_proxy_url != undefined && cached_proxy_url) {
-    //         set_proxy_url(cached_proxy_url);
-    //     }
-    // });
+        // funny, this changed recently and broke the app
+        if (startWithPost == "" || startWithPost.length == 6 || startWithPost.length == 7) {
+            toastr.info(
+                `URL for scraping subreddit "${downloadSessionState.value.subreddit_name}" for next set of posts` +
+                    (startWithPost ? ` after the post with the id ${startWithPost}` : "")
+            );
 
-    // async function set_proxy_url(url) {
-    //     $("#proxy_address").val(url);
+            const content = await processPosts(downloadSessionState.value, proxyHostAddress.value, scope);
+            const filename = "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
 
-    //     await fetch(`https://${url}:9376/check`, {
-    //         method: "GET",
-    //     })
-    //         .then(async (response) => {
-    //             if (response.ok) {
-    //                 const jsonData = await response.json();
+            if (selectedSession.value == null) {
+                downloadBlob(content, filename);
+                toastr.info("Zip downloaded");
+            } else {
+                (content as any).name = filename;
+                const file = content as File;
+                await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
+                await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+                toastr.info(
+                    "Stored " + filename + " successfully into the session data files of session: " + selectedSession.value.name
+                );
+            }
+        } else {
+            toastr.error("Post to start with not set correctly");
+        }
+    }
 
-    //                 if (jsonData.success != undefined && jsonData.success) {
-    //                     toastr.success("Connected to Proxy Server");
-    //                     $("#proxy_address").css("background", "green");
-    //                     return;
-    //                 }
-    //             }
-    //             $("#proxy_address").css("background", "red");
-    //             toastr.error("Proxy Server not found");
-    //         })
-    //         .catch(() => {
-    //             $("#proxy_address").css("background", "red");
-    //             toastr.error("Proxy Server not found");
-    //         });
+    const proxyUrl = computed(() => {
+        return `https://${proxyHostAddress.value}:9376/`;
+    });
+    const proxyCheckEndpointUrl = computed(() => {
+        return `${proxyUrl.value}check`;
+    });
+    const proxyCheckTorEndpointUrl = computed(() => {
+        return `${proxyUrl.value}check_tor`;
+    });
 
-    //     localStorage.setItem("proxy_url", url);
-    // }
+    const proxyReachable = ref(false);
+    const proxyUsesTor = ref(false);
 
-    // function show_scrape_subreddit_url(subreddit_name = "", start_with_post = "") {
-    //     var start_with_specific_post = start_with_post != "" && (start_with_post.length == 6 || start_with_post.length == 7); // funny, this changed recently and broke the app
+    async function updateProxyReachability() {
+        await fetch(proxyCheckEndpointUrl.value, {
+            method: "GET",
+        })
+            .then(async (response) => {
+                proxyReachable.value = false;
+                if (response.ok) {
+                    const jsonData = await response.json();
 
-    //     toastr.info(
-    //         `URL for scraping subreddit "${subreddit_name}" for next set of posts` +
-    //             (start_with_specific_post ? ` after the post with the id ${start_with_post}` : "")
-    //     );
+                    if (jsonData.success != undefined && jsonData.success) {
+                        toastr.success("Connected to Proxy Server");
+                        proxyReachable.value = true;
+                        return;
+                    }
+                }
+                toastr.error("Proxy Server not found");
+            })
+            .catch(() => {
+                proxyReachable.value = false;
+                toastr.error("Proxy Server not found");
+            });
+        if (proxyReachable.value) {
+            await fetch(proxyCheckTorEndpointUrl.value, {
+                method: "GET",
+            })
+                .then(async (response) => {
+                    proxyUsesTor.value = false;
+                    if (response.ok) {
+                        const jsonData = await response.json();
 
-    //     document.getElementById("url_output").value = url;
-    //     document.getElementById("api_url_output").value = api_url;
-    // }
+                        if (jsonData.tor_connection != undefined && jsonData.tor_connection) {
+                            proxyUsesTor.value = true;
+                            return;
+                        }
+                    }
+                })
+                .catch(() => {
+                    proxyUsesTor.value = false;
+                });
+        } else {
+            proxyUsesTor.value = false;
+        }
+    }
 
-    // const file_name = "archive_" + String(Date.now()) + (useKeysStore().encryptionOn(scope) ? "_encrypted" : "") + ".zip";
+    watch(
+        proxyHostAddress,
+        async () => {
+            localStorage.setItem("proxy_url", proxyHostAddress.value);
+        },
+        {
+            immediate: true,
+        }
+    );
 
-    // if (sessionToSaveInto == null) {
-    //
-    // } else {
-    //     content.name = file_name;
-    //     // store directly into the session
-    //     await storeDataFileInSelectedSessionsOpfsFolder(content);
+    const proxyFieldBackground = computed(() => {
+        if (proxyHostAddress.value == "") {
+            return "";
+        }
 
-    //     toastr.info("Stored " + file_name + " successfully into the session data files of session: " + selectedSession.name);
-    // }
+        if (proxyReachable.value) {
+            if (proxyUsesTor.value) {
+                return "purple";
+            } else {
+                return "green";
+            }
+        } else {
+            return "red";
+        }
+    });
 </script>
 
 <template>
@@ -98,49 +164,50 @@
     <div>
         Proxy Server (See `README.md`, Needed because of CORS):
         <br />
-        https://<input type="text" name="proxy_address" id="proxy_address" />:9376/
+        https://<input
+            type="text"
+            v-model="proxyHostAddress"
+            :style="{
+                'background-color': proxyFieldBackground,
+            }"
+            @blur="updateProxyReachability"
+        />:9376/
         <br />
         <br />
         Subreddit to scrape<br />
-        <input type="text" id="subreddit_name" placeholder="mathmemes" value="mathmemes" /><br />
-        Post to start with (shortlink shown by "old.reddit.com" format, e.g. "y3215w" in the case of https://redd.it/y3215w)<br />
-        <input type="text" id="start_with_post" />
-        <button id="generate_url_action">Generate URL</button>
+        <input type="text" placeholder="mathmemes" v-model="downloadSessionState.subreddit_name" /><br />
+        Post to start with (short-link shown by "old.reddit.com" format, e.g. "y3215w" in the case of https://redd.it/y3215w)<br />
+        <input type="text" v-model="downloadSessionState.start_with_post" />
+        <button @click="generateURL">Generate URL</button>
 
         <br />
         <br />
         URL of the posts (old.reddit) because easier to see<br />
-        <input type="text" id="url_output" disabled value="" style="width: 60%" />
-        <button id="copy_to_clipboard">Copy to clipboard</button>
+        <input type="text" disabled style="width: 60%" v-model="urlOutput" />
+        <button @click="copyToClipboard(urlOutput)">Copy to clipboard</button>
         <br />
         URL of the corresponding api endpoint<br />
-        <input type="text" id="api_url_output" disabled value="" style="width: 60%" />
+        <input type="text" disabled style="width: 60%" v-model="urlOutputApi" />
 
-        <button id="process_posts" style="color: darkcyan">Process one set of Posts</button>
+        <button style="color: darkcyan" @click="processPostsAction">Process one set of Posts</button>
 
         <br />
         <br />
-        Encryption key (If set, the output will be encrypted):<br />
-        <input type="password" id="encryption_key" value="" style="width: 40%" placeholder="Encryption Key" />
-        <button id="update_encryption_key">Update</button>
+        <PasswordField
+            scope="page"
+            hint="Insert Encryption Key"
+            hintActivated="Encryption Activated"
+            description="Encryption key (If set, the output will be encrypted):"
+        ></PasswordField>
 
         <br />
         <br />
         Where to put the results:
-        <fieldset>
-            <input
-                type="radio"
-                id="default_page"
-                name="sessions_select_page"
-                value="default"
-                class="selects_session"
-                scope="page"
-                checked
-            />
-            <label for="default_page">Download</label>
-            <br />
-            <div class="sessions_radio_buttons" scope="page"></div>
-        </fieldset>
+        <SessionSelectButtons
+            defaultSelectionLabel="Download"
+            scope="page"
+            @sessionSelected="handleSessionSelected"
+        ></SessionSelectButtons>
     </div>
 </template>
 

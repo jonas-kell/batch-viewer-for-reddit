@@ -1,4 +1,5 @@
 import { saveAs } from "file-saver";
+import toastr from "toastr";
 
 export function copyToClipboard(text = "") {
     navigator.clipboard.writeText(text);

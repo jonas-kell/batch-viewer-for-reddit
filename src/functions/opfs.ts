@@ -3,6 +3,7 @@ import { Post, MemorySession, StoredSession, FileMeta, FileMetaEntry } from "./i
 import useKeysStore from "./../stores/keys";
 import { readInZipFile } from "./zipFilesManagement";
 import { decryptPostObject, encryptPostObject } from "./postEncryptionManagement";
+import toastr from "toastr";
 
 async function getSessionDirectoryHandle() {
     const originPrivateFileSystem = await navigator.storage.getDirectory();
@@ -232,8 +233,6 @@ async function storeSessionToOpfs(session: MemorySession, scope: string) {
     // write out to the filesystem
     await writable.write(JSON.stringify(session.session));
     await writable.close();
-
-    toastr.success("Session data stored to File System");
 }
 
 export function sizeToString(size: number): string {

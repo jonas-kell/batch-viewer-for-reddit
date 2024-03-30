@@ -1,30 +1,68 @@
 <script setup lang="ts">
-    // let sessionsMeta = await recreateSessionsMeta();
+    import { computed, ref } from "vue";
+    import useSessionsMetaStore from "./../stores/sessionsMeta";
+    const sessionsMetaStore = useSessionsMetaStore();
 
-    // $(".sessions_radio_buttons").each(async function () {
-    //     session_names_div = $(this);
-    //     let scope = session_names_div.attr("scope") ?? "page";
+    const props = defineProps({
+        scope: {
+            type: String,
+            default: "page",
+        },
+        defaultSelectionLabel: {
+            type: String,
+            default: "Default",
+        },
+    });
+    const emit = defineEmits(["sessionSelected"]);
 
-    //     Object.values(sessionsMeta).forEach((sessionMeta) => {
-    //         session_names_div.append(`
-    //             <input type="radio" id="${sessionMeta.name}_${scope}" name="sessions_select_${scope}" value="${sessionMeta.name}" class="selects_session" scope="page" />
-    //             <label for="${sessionMeta.name}_${scope}">${sessionMeta.name}</label>
-    //             <br />
-    //             `);
-    //     });
-    //     $(".selects_session").on("click", function () {
-    //         let klicked_scope = $(this).attr("scope") ?? "page";
-    //         let res = selectSession($(this).attr("value"), klicked_scope);
+    const sessions = computed(() => {
+        return sessionsMetaStore.getSessions(props.scope);
+    });
 
-    //         if (!res && $(this).attr("value") != "default") {
-    //             selectSession("default", klicked_scope);
-    //         }
+    const selectDefault = ref(null);
 
-    //         $("#load_files_from_session").click(); // trigger display loading if this hidden button is present on the page
-    //     });
-    // });
+    function selectSession(evt: {
+        target: {
+            value: string;
+        };
+    }) {
+        const value = evt.target.value;
+        if (value != "default") {
+            const selectable = sessionsMetaStore.sessionSelectableCheck(value, props.scope);
+
+            if (selectable) {
+                const session = sessionsMetaStore.getSession(value, props.scope);
+
+                if (session != null) {
+                    emit("sessionSelected", session);
+                    return;
+                }
+            }
+        }
+
+        (selectDefault.value as any).checked = true;
+        emit("sessionSelected", null);
+    }
 </script>
 
-<template></template>
+<template>
+    <fieldset @change="(evt: any) =>  selectSession(evt)">
+        <input
+            type="radio"
+            :id="'default_' + scope"
+            :name="'sessions_select_' + scope"
+            value="default"
+            checked
+            ref="selectDefault"
+        />
+        <label :for="'default_' + scope">{{ defaultSelectionLabel }}</label>
+
+        <template v-for="session in sessions">
+            <br />
+            <input type="radio" :id="session.name + '_' + scope" :name="'sessions_select_' + scope" :value="session.name" />
+            <label :for="session.name + '_' + scope">{{ session.name }}</label>
+        </template>
+    </fieldset>
+</template>
 
 <style scoped></style>

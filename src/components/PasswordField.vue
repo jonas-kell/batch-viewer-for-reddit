@@ -1,8 +1,10 @@
 <script setup lang="ts">
     import { computed, ref } from "vue";
     import useKeysStore from "./../stores/keys";
+    import useSessionsMetaStore from "./../stores/sessionsMeta";
 
     const keysStore = useKeysStore();
+    const sessionsMetaStore = useSessionsMetaStore();
 
     const props = defineProps({
         scope: {
@@ -25,15 +27,20 @@
 
     const internalPassword = ref(keysStore.getPassword(props.scope));
 
-    function performUpdate() {
-        keysStore.setKey(props.scope, internalPassword.value);
-        internalPassword.value = "";
+    async function performUpdate() {
+        await keysStore.setKey(props.scope, internalPassword.value);
+        await sessionsMetaStore.reParseLocalSessionCacheFromFiles(props.scope);
     }
 
     const memoryPasswordSet = computed(() => {
         let pw = keysStore.getPassword(props.scope);
 
-        return pw != "";
+        const res = pw != "";
+
+        if (res) {
+            internalPassword.value = "";
+        }
+        return res;
     });
 </script>
 

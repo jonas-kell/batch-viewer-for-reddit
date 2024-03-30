@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { keyFromPassword } from "../functions/encrypt";
 import toastr from "toastr";
+import useSessionsMetaStore from "./sessionsMeta";
 
 export default defineStore("keys", () => {
     const activeKeys = ref(
@@ -28,6 +29,7 @@ export default defineStore("keys", () => {
 
     function unsetKey(scope: string) {
         delete activeKeys.value[scope];
+        useSessionsMetaStore().reParseLocalSessionCacheFromFiles(scope);
     }
 
     function encryptionOn(scope: string) {

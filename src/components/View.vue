@@ -39,9 +39,13 @@
         console.log("randomize");
     }
 
-    const imageWidth = ref(100);
+    const imageWidth = ref(parseInt(localStorage.getItem("image-width") ?? "100"));
     const currentPostNumber = ref(0);
     const maxPostNumber = ref(0);
+
+    watch(imageWidth, () => {
+        localStorage.setItem("image-width", String(imageWidth.value));
+    });
 
     function selectPrevImage() {
         selectPost(currentPostNumber.value - 1);

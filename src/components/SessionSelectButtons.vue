@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, ref } from "vue";
+    import { computed, ref, watch } from "vue";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
     const sessionsMetaStore = useSessionsMetaStore();
 
@@ -11,6 +11,10 @@
         defaultSelectionLabel: {
             type: String,
             default: "Default",
+        },
+        reset: {
+            type: Boolean,
+            default: false,
         },
     });
     const emit = defineEmits(["sessionSelected"]);
@@ -40,6 +44,19 @@
             }
         }
 
+        selectDefaultOperation();
+    }
+
+    watch(props, () => {
+        if (props.reset) {
+            selectDefaultOperation();
+        }
+    });
+    watch(sessions, () => {
+        selectDefaultOperation();
+    });
+
+    function selectDefaultOperation() {
         (selectDefault.value as any).checked = true;
         emit("sessionSelected", null);
     }

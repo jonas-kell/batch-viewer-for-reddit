@@ -1,15 +1,45 @@
 <script setup lang="ts">
-    // document.getElementById("update_input_decryption_key").addEventListener("click", async () => {
-    //         await set_key_to_use("input_decryption_key", "update_input_decryption_key");
+    import { nextTick, onMounted, ref } from "vue";
+    import useSessionsMetaStore from "./../stores/sessionsMeta";
+    import PasswordField from "./PasswordField.vue";
+    import SessionSelectButtons from "./SessionSelectButtons.vue";
+    import { MemorySession } from "../functions/interfaces";
+    import toastr from "toastr";
 
-    //         selectSession("datainput"); // clear input scope session
-    //     });
+    const sessionsMetaStore = useSessionsMetaStore();
 
-    //     document.getElementById("update_output_encryption_key").addEventListener("click", async () => {
-    //         await set_key_to_use("output_encryption_key", "update_output_encryption_key");
+    const scopeSource = "source";
+    const scopeTarget = "target";
+    onMounted(() => {
+        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scopeSource);
+        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scopeTarget);
+    });
 
-    //         selectSession("dataoutput"); // clear output scope session
-    //     });
+    const resetOutput = ref(false);
+
+    const selectedSessionSource = ref(null as MemorySession | null);
+    function handleSourceSessionSelected(session: MemorySession | null) {
+        selectedSessionSource.value = session;
+        checkForConflicts();
+    }
+    const selectedSessionTarget = ref(null as MemorySession | null);
+    function handleTargetSessionSelected(session: MemorySession | null) {
+        selectedSessionTarget.value = session;
+        checkForConflicts();
+    }
+
+    function checkForConflicts() {
+        if (selectedSessionSource.value && selectedSessionTarget.value) {
+            if (selectedSessionSource.value.name == selectedSessionTarget.value.name) {
+                toastr.error("Can not output into self");
+
+                resetOutput.value = true;
+                nextTick(() => {
+                    resetOutput.value = false;
+                });
+            }
+        }
+    }
 </script>
 
 <template>
@@ -19,51 +49,37 @@
     <br /><br />
 
     <h3>Input Sessions</h3>
-    Decryption key (Needed if the input Session is encrypted):<br />
-    <input type="password" id="input_decryption_key" value="" style="width: 40%" placeholder="Decryption Key" />
-    <button id="update_input_decryption_key" scope="inputdata">Update</button>
+    <PasswordField
+        :scope="scopeSource"
+        hint="Insert Decryption Key"
+        hintActivated="Encryption Activated"
+        description="Decryption key (Needed if SOurce is encrypted):"
+    ></PasswordField>
     <br />
     <br />
-    <div>
-        <fieldset>
-            <input
-                type="radio"
-                id="default_inputdata"
-                name="sessions_select_inputdata"
-                value="default"
-                class="selects_session"
-                scope="inputdata"
-                checked
-            />
-            <label for="default_inputdata">Please Choose Session</label>
-            <br />
-            <div class="sessions_radio_buttons" scope="inputdata"></div>
-        </fieldset>
-    </div>
+    <SessionSelectButtons
+        defaultSelectionLabel="Download"
+        :scope="scopeSource"
+        @sessionSelected="handleSourceSessionSelected"
+    ></SessionSelectButtons>
 
     <br /><br />
     <h3>Output Sessions</h3>
-    Encryption key (If set, the output will be encrypted):<br />
-    <input type="password" id="output_encryption_key" value="" style="width: 40%" placeholder="Encryption Key" />
-    <button id="update_output_encryption_key" scope="outputdata">Update</button>
+    <br />
+    <PasswordField
+        :scope="scopeTarget"
+        hint="Insert Encryption Key"
+        hintActivated="Encryption Activated"
+        description="Encryption key (If set, the output will be encrypted):"
+    ></PasswordField>
     <br />
     <br />
-    <div>
-        <fieldset>
-            <input
-                type="radio"
-                id="default_outputdata"
-                name="sessions_select_outputdata"
-                value="default"
-                class="selects_session"
-                scope="outputdata"
-                checked
-            />
-            <label for="default_outputdata">Download</label>
-            <br />
-            <div class="sessions_radio_buttons" scope="outputdata"></div>
-        </fieldset>
-    </div>
+    <SessionSelectButtons
+        defaultSelectionLabel="Download"
+        :scope="scopeTarget"
+        @sessionSelected="handleTargetSessionSelected"
+        :reset="resetOutput"
+    ></SessionSelectButtons>
 </template>
 
 <style scoped></style>

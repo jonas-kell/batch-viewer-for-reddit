@@ -1,6 +1,7 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from "vue";
+    import { computed, nextTick, ref, watch } from "vue";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
+    import toastr from "toastr";
     const sessionsMetaStore = useSessionsMetaStore();
 
     const props = defineProps({
@@ -24,6 +25,7 @@
     });
 
     const selectDefault = ref(null);
+    const itemRefs = ref([]);
 
     function selectSession(evt: {
         target: {
@@ -53,8 +55,31 @@
         }
     });
     watch(sessions, () => {
+        const cacheSelection = getSelection();
+
         selectDefaultOperation();
+
+        // attempt to re-select for more streamline experience
+        if (cacheSelection) {
+            nextTick(() => {
+                setTimeout(() => {
+                    cacheSelection.click();
+                    toastr.warning("Re-Selected For convenience");
+                }, 400);
+            });
+        }
     });
+
+    function getSelection(): HTMLSelectElement | null {
+        let res = null as HTMLSelectElement | null;
+        itemRefs.value.forEach((elem: HTMLSelectElement) => {
+            if ((elem as any).checked) {
+                res = elem;
+            }
+        });
+
+        return res;
+    }
 
     function selectDefaultOperation() {
         (selectDefault.value as any).checked = true;
@@ -76,7 +101,13 @@
 
         <template v-for="session in sessions">
             <br />
-            <input type="radio" :id="session.name + '_' + scope" :name="'sessions_select_' + scope" :value="session.name" />
+            <input
+                type="radio"
+                :id="session.name + '_' + scope"
+                :name="'sessions_select_' + scope"
+                :value="session.name"
+                ref="itemRefs"
+            />
             <label :for="session.name + '_' + scope">{{ session.name }}</label>
         </template>
     </fieldset>

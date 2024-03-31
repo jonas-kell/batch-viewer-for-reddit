@@ -25,6 +25,16 @@
         selectedSession.value = session;
     }
 
+    const processPostsButton = ref(null);
+    const continuousMode = ref((localStorage.getItem("attemptDownloadContinuously") ?? "false") == "true");
+    watch(continuousMode, () => {
+        localStorage.setItem("attemptDownloadContinuously", String(continuousMode.value));
+    });
+
+    function clickOnNextProcess() {
+        (processPostsButton.value as unknown as HTMLElement).click();
+    }
+
     const downloadSessionState = ref({
         count: 0,
         archived_count: 0,
@@ -87,6 +97,13 @@
             downloadRunning.value = false;
         }
         downloadRunning.value = false;
+
+        if (continuousMode.value) {
+            setTimeout(() => {
+                toastr.warning("Starting new Session");
+                clickOnNextProcess();
+            }, 2000);
+        }
     }
 
     const proxyUrl = computed(() => {
@@ -214,9 +231,16 @@
             }"
             :disabled="downloadRunning"
             @click="processPostsAction"
+            ref="processPostsButton"
         >
             Process one set of Posts
         </button>
+
+        <br />
+        <br />
+        <input type="checkbox" id="continuousModeCheckInput" v-model="continuousMode" />
+        <label for="continuousModeCheckInput"> Attempt Continuous Download </label>
+        <br />
 
         <div v-if="downloadRunning">
             <br />

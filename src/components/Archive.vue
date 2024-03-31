@@ -9,6 +9,7 @@
     import { DownloadSessionState, generateRedditApiURL, processPosts } from "../functions/archiveMedia";
     import useProgressStore from "./../stores/progress";
     import { generateZipFileName } from "../functions/zipFilesManagement";
+    import SessionInfo from "./SessionInfo.vue";
 
     const sessionsMetaStore = useSessionsMetaStore();
     const progressStore = useProgressStore();
@@ -245,6 +246,9 @@
             scope="page"
             @sessionSelected="handleSessionSelected"
         ></SessionSelectButtons>
+        <br />
+        <br />
+        <SessionInfo v-if="selectedSession" :session="selectedSession" :num-posts="true" :list-files="false"></SessionInfo>
     </div>
 </template>
 

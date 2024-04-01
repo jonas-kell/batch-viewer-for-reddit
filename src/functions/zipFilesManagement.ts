@@ -36,7 +36,7 @@ export async function downloadMediaAndGenerateZipFile(
     postsArray: Post[],
     proxyHost: string | null = null,
     scope: string
-): Promise<Blob> {
+): Promise<[Blob, number]> {
     useProgressStore().reset();
 
     var zip = new JSZip();
@@ -86,6 +86,8 @@ export async function downloadMediaAndGenerateZipFile(
         return post.hash_filename && post.hash_filename != "";
     });
 
+    let downloaded = postsArray.length;
+
     // encrypt lookup json if necessary
     if (useKeysStore().encryptionOn(scope)) {
         for (let i = 0; i < postsArray.length; i++) {
@@ -96,7 +98,7 @@ export async function downloadMediaAndGenerateZipFile(
     // add contents meta file to zip
     zip.file(contentsZipFileName, JSON.stringify(postsArray));
 
-    return await zip.generateAsync({ type: "blob" });
+    return [await zip.generateAsync({ type: "blob" }), downloaded];
 }
 
 export async function loadBlobFromStorage(session: MemorySession, post: Post, scope: string): Promise<Blob | null> {

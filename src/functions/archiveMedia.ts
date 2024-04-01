@@ -51,7 +51,7 @@ export async function processPosts(
     downloadState: DownloadSessionState,
     proxyHost: string | null = null,
     scope: string
-): Promise<Blob> {
+): Promise<[Blob, number]> {
     const redditApiURL = generateRedditApiURL(downloadState);
 
     const jsonResponse: RedditApiResponse = (await requestMediaOrApiData(redditApiURL, proxyHost)) as RedditApiResponse; // cast should work here
@@ -93,9 +93,9 @@ export async function processPosts(
     downloadState.start_with_post = jsonResponse["data"]["after"].substring(3); // removes the t3_ at the beginning
 
     // download the images and zip them
-    const zipBlob = await downloadMediaAndGenerateZipFile(outputArray, proxyHost, scope);
+    const zipBlobAndNumber = await downloadMediaAndGenerateZipFile(outputArray, proxyHost, scope);
 
-    return zipBlob;
+    return zipBlobAndNumber;
 }
 
 function mediaURL(jsonPost: RedditApiPost): string {

@@ -68,7 +68,7 @@
                         (startWithPost ? ` after the post with the id ${startWithPost}` : "")
                 );
 
-                const content = await processPosts(
+                const [content, numberOfFiles] = await processPosts(
                     selectedSession.value,
                     downloadSessionState.value,
                     proxyHostAddress.value,
@@ -76,17 +76,23 @@
                 );
                 const filename = generateZipFileName(scope);
 
-                if (selectedSession.value == null) {
-                    downloadBlob(content, filename);
-                    toastr.info("Zip downloaded");
-                } else {
-                    (content as any).name = filename;
-                    const file = content as File;
-                    const sessionName = selectedSession.value.name; // gets unselected here ...
-                    await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
-                    await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+                if (numberOfFiles > 0) {
+                    if (selectedSession.value == null) {
+                        downloadBlob(content, filename);
+                        toastr.info("Zip downloaded");
+                    } else {
+                        (content as any).name = filename;
+                        const file = content as File;
+                        const sessionName = selectedSession.value.name; // gets unselected here ...
+                        await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
+                        await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
 
-                    toastr.info("Stored " + filename + " successfully into the session data files of session: " + sessionName);
+                        toastr.info(
+                            "Stored " + filename + " successfully into the session data files of session: " + sessionName
+                        );
+                    }
+                } else {
+                    toastr.warning("Nothing has been successfully downloaded this setp. Skip archiving.");
                 }
             } else {
                 toastr.error("Post to start with not set correctly");
@@ -100,7 +106,7 @@
 
         if (continuousMode.value) {
             setTimeout(() => {
-                toastr.warning("Starting new Session");
+                toastr.warning("Starting new Archiving-Run");
                 clickOnNextProcess();
             }, 2000);
         }

@@ -54,7 +54,15 @@ export async function processPosts(
 ): Promise<[Blob, number]> {
     const redditApiURL = generateRedditApiURL(downloadState);
 
-    const jsonResponse: RedditApiResponse = (await requestMediaOrApiData(redditApiURL, proxyHost)) as RedditApiResponse; // cast should work here
+    const jsonResponse: RedditApiResponse | null = (await requestMediaOrApiData(
+        redditApiURL,
+        proxyHost
+    )) as RedditApiResponse | null; // cast should work here
+
+    if (!jsonResponse) {
+        toastr.error("API Call failed. No POST json received");
+        throw Error("Processing failed because missing API response");
+    }
 
     let currentIds: string[] = [];
     if (session != null) {
@@ -136,6 +144,7 @@ export async function requestMediaOrApiData(url = "", proxyHost: string | null =
         }).then((response) => {
             if (!response.ok) {
                 console.error("Network response was not OK");
+                return null;
             }
             return response.blob();
         });
@@ -147,10 +156,14 @@ export async function requestMediaOrApiData(url = "", proxyHost: string | null =
         }).then((response) => {
             if (!response.ok) {
                 console.error("Network response was not OK");
+                return null;
             }
             return response.text();
         });
 
+        if (!gifvText) {
+            return null;
+        }
         const videoURL = (gifvText.match(/content="(https:\/\/.+\.mp4)"/) ?? ["", ""])[1]; // 0 is whole match, 1 the capturing group
         return await requestMediaOrApiData(videoURL, proxyHost);
     }
@@ -162,11 +175,12 @@ export async function requestMediaOrApiData(url = "", proxyHost: string | null =
         }).then((response) => {
             if (!response.ok) {
                 console.error("Network response was not OK");
+                return null;
             }
             return response.json();
         });
 
-        return jsonResponse as RedditApiResponse;
+        return jsonResponse as RedditApiResponse | null;
     }
 
     toastr.error("Unprocessable data entity for url " + url);

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-    import { onMounted, ref, watch } from "vue";
+    import { computed, onMounted, ref, watch } from "vue";
     import PasswordField from "./PasswordField.vue";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
     import SessionSelectButtons from "./SessionSelectButtons.vue";
     import { MemorySession, Post } from "../functions/interfaces";
     import { loadBlobFromStorage } from "../functions/zipFilesManagement";
     import { blobToBase64 } from "../functions/hash";
+    import seedrandom from "seed-random";
+
     const sessionsMetaStore = useSessionsMetaStore();
 
     const scope = "page";
@@ -34,10 +36,37 @@
         selectedSession.value = session;
     }
 
+    const randomnessSeed = ref((localStorage.getItem("randomnessSeedForDisplay") ?? String(Math.random())) as string);
+
     function reRandomize() {
-        // TODO randomize
-        console.log("randomize");
+        randomnessSeed.value = String(Math.random());
+        localStorage.setItem("randomnessSeedForDisplay", randomnessSeed.value);
+
+        resetDisplay();
     }
+
+    const randomnessMapping = computed((): string[] => {
+        const rng = seedrandom(randomnessSeed.value);
+
+        if (selectedSession.value) {
+            let keyArray = Object.keys(selectedSession.value.posts);
+
+            const numSwaps = keyArray.length * 3; // TODO other number???
+            for (let index = 0; index < numSwaps; index++) {
+                const firstIndex = Math.round(rng() * (keyArray.length - 1));
+                const secondIndex = Math.round(rng() * (keyArray.length - 1));
+
+                // swap two keys
+                const tmp = keyArray[firstIndex];
+                keyArray[firstIndex] = keyArray[secondIndex];
+                keyArray[secondIndex] = tmp;
+            }
+
+            return keyArray;
+        } else {
+            return [];
+        }
+    });
 
     const imageWidth = ref(parseInt(localStorage.getItem("image-width") ?? "100"));
     const currentPostNumber = ref(0);
@@ -235,7 +264,7 @@
         if (selectedSession.value == null) {
             return null;
         } else {
-            return selectedSession.value.posts[Object.keys(selectedSession.value.posts)[index]];
+            return selectedSession.value.posts[randomnessMapping.value[index]];
         }
     }
 

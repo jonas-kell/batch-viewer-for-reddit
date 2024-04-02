@@ -21,6 +21,7 @@
     "homepage": "https://github.com/jonas-kell/batch-viewer-for-reddit#readme",
     "devDependencies": {
         "@types/file-saver": "^2.0.7",
+        "@types/seed-random": "^2.2.4",
         "@types/toastr": "^2.1.43",
         "@vitejs/plugin-vue": "^5.0.4",
         "typescript": "^5.4.3",
@@ -32,6 +33,7 @@
         "file-saver": "^2.0.5",
         "jszip": "^3.10.1",
         "pinia": "^2.1.7",
+        "seed-random": "^2.2.0",
         "toastr": "^2.1.4",
         "vue": "^3.4.21",
         "vue-router": "^4.3.0"

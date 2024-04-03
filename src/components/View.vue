@@ -7,26 +7,37 @@
     import { loadBlobFromStorage } from "../functions/zipFilesManagement";
     import { blobToBase64 } from "../functions/hash";
     import seedrandom from "seed-random";
+    import { v4 as uuid } from "uuid";
 
     const sessionsMetaStore = useSessionsMetaStore();
+
+    const viewerUUID = ref(uuid());
 
     const scope = "page";
     onMounted(() => {
         sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
 
+        sessionStorage.setItem("listenerViewUUID", viewerUUID.value);
+
         // triggers for the dynamically generated parts of the html
         document.addEventListener("click", function (event: any) {
             // Check if the clicked element has the class "view_prev"
             if (event.target.classList.contains("view_prev")) {
-                console.log("view_prev clicked");
-                selectPrevImage();
+                // avoid multiple registered listeners
+                if (sessionStorage.getItem("listenerViewUUID") == viewerUUID.value) {
+                    console.log("view_prev clicked");
+                    selectPrevImage();
+                }
             }
         });
         document.addEventListener("click", function (event: any) {
             // Check if the clicked element has the class "view_prev"
             if (event.target.classList.contains("view_next")) {
-                console.log("view_next clicked");
-                selectNextImage();
+                // avoid multiple registered listeners
+                if (sessionStorage.getItem("listenerViewUUID") == viewerUUID.value) {
+                    console.log("view_next clicked");
+                    selectNextImage();
+                }
             }
         });
     });

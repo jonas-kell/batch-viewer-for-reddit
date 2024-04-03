@@ -64,7 +64,7 @@
             nextTick(() => {
                 setTimeout(() => {
                     cacheSelection.click();
-                    toastr.warning("Re-Selected For convenience");
+                    toastr.warning("Re-Selected for convenience");
                 }, 400);
             });
         }

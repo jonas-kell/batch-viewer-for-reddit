@@ -64,10 +64,20 @@ export default defineStore("sessionsMeta", () => {
 
     function sessionSelectableCheck(sessionName: string, scope: string) {
         if (Object.keys(sessions.value[scope]).includes(sessionName)) {
-            if (sessions.value[scope][sessionName].can_be_decrypted ?? false) {
-                return true;
+            if (sessions.value[scope][sessionName].is_encrypted) {
+                // check for encrypted sessions
+                if (sessions.value[scope][sessionName].can_be_decrypted ?? false) {
+                    return true;
+                } else {
+                    toastr.error("Encrypted session can not be selected without key");
+                }
             } else {
-                toastr.error("Encrypted session can not be selected without key");
+                // only allow for encryption not activated to be selected
+                if (!useKeysStore().encryptionOn(scope)) {
+                    return true;
+                } else {
+                    toastr.error("Un-encrypted session can not be selected when encryption is active");
+                }
             }
         } else {
             if (sessionName != "default") {

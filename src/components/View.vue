@@ -13,11 +13,15 @@
 
     const viewerUUID = ref(uuid());
 
+    function postNumberCacheKey(session: MemorySession) {
+        return "currentlySelectedPostForSession_" + session.name;
+    }
+
     const scope = "page";
     onMounted(() => {
         sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
 
-        sessionStorage.setItem("listenerViewUUID", viewerUUID.value);
+        sessionStorage.setItem("listenerViewUUID", viewerUUID.value); // yes, vou COULD unregister them. I hate dealing with un-registering
 
         // triggers for the dynamically generated parts of the html
         document.addEventListener("click", function (event: any) {
@@ -54,6 +58,7 @@
         localStorage.setItem("randomnessSeedForDisplay", randomnessSeed.value);
 
         resetDisplay();
+        selectPost(0);
     }
 
     const randomnessMapping = computed((): string[] => {
@@ -119,6 +124,11 @@
             number = 0;
         }
         currentPostNumber.value = number;
+
+        // cache viewed post number
+        if (selectedSession.value) {
+            localStorage.setItem(postNumberCacheKey(selectedSession.value), String(currentPostNumber.value));
+        }
 
         const json = getPostJson(number);
         if (json) {
@@ -268,7 +278,10 @@
         maxPostNumber.value = getNumberOfPosts() - 1;
 
         // get image files from zip and append to display
-        selectPost(0);
+        if (selectedSession.value) {
+            const postNumberToSelect = parseInt(localStorage.getItem(postNumberCacheKey(selectedSession.value)) ?? "0");
+            selectPost(postNumberToSelect);
+        }
     }
 
     function getPostJson(index: number) {

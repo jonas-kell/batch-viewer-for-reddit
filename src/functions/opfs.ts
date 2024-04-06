@@ -204,7 +204,7 @@ export function getSessionDataFileCompleteSize(session: MemorySession | null): n
     return size;
 }
 
-async function storeSessionToOpfs(session: MemorySession, scope: string) {
+export async function storeSessionToOpfs(session: MemorySession, scope: string) {
     const sessionDirHandle = await getSessionDirectoryHandle();
     const sessionFileHandle = await sessionDirHandle.getFileHandle(getSessionMetaFilename(session.name));
     const writable = await sessionFileHandle.createWritable();

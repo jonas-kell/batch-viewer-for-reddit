@@ -88,6 +88,8 @@ export async function exportFromSourceToTarget(
                     subreddit: post.subreddit, // here can be injected for missing legacy data
                     title: post.title,
                     zip_file_name: zipFilename,
+                    rating: post.rating, // TODO option to reset/clear/choose to transfer the rating/other specialized properties
+                    // TODO this is kind of un-nice that stuff can be forgotten to be added here
                 });
                 useProgressStore().addSuccess();
             } else {

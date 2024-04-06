@@ -10,6 +10,26 @@ export interface Post {
     title: string;
     media_url: string;
     subreddit: string;
+    rating?: Rating;
+}
+
+export interface Rating {
+    stars: string;
+}
+
+export function getRating(post: Post): Rating {
+    if (post.rating == undefined || post.rating == null || !post.rating) {
+        let newRating: Rating = {
+            stars: "0",
+        };
+        post.rating = newRating;
+    }
+
+    if (post.rating.stars == undefined || post.rating.stars == null || !post.rating.stars) {
+        post.rating.stars = "0";
+    }
+
+    return post.rating; // now definitely set
 }
 
 export interface FileMetaEntry {

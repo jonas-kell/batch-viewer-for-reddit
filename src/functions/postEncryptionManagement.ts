@@ -1,5 +1,5 @@
 import { decryptText, encryptText } from "./encrypt";
-import { Post } from "./interfaces";
+import { Post, Rating } from "./interfaces";
 
 const unEncryptedPostKeys = ["hash_filename", "iv_string", "mime_type", "series_index", "zip_file_name"] as (
     | "hash_filename"
@@ -41,6 +41,16 @@ export async function decryptPostObject(post: Post, scope: string) {
         result_post[keyword] = result;
     }
 
+    // rating
+    let storedRating = "0";
+    const readOutValue = post.rating?.stars ?? undefined;
+    if (readOutValue != undefined) {
+        storedRating = await decryptText(readOutValue, post["iv_string"] ?? "", scope);
+    }
+    result_post.rating = {
+        stars: storedRating,
+    } as Rating;
+
     return result_post;
 }
 
@@ -58,6 +68,11 @@ export async function encryptPostObject(post: Post, scope: string) {
     for (const keyword of encryptedPostObjects) {
         result_post[keyword] = await encryptText(post[keyword], post["iv_string"] ?? "", scope);
     }
+
+    // rating
+    result_post.rating = {
+        stars: await encryptText(post.rating?.stars ?? "0", post["iv_string"] ?? "", scope),
+    } as Rating;
 
     return result_post;
 }

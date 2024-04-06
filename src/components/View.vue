@@ -1,13 +1,14 @@
 <script setup lang="ts">
-    import { computed, onMounted, ref, watch } from "vue";
+    import { computed, nextTick, onMounted, ref, watch } from "vue";
     import PasswordField from "./PasswordField.vue";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
     import SessionSelectButtons from "./SessionSelectButtons.vue";
-    import { MemorySession, Post } from "../functions/interfaces";
+    import { MemorySession, Post, getRating } from "../functions/interfaces";
     import { loadBlobFromStorage } from "../functions/zipFilesManagement";
     import { blobToBase64 } from "../functions/hash";
     import seedrandom from "seed-random";
     import { v4 as uuid } from "uuid";
+    import RatingVue from "./Rating.vue";
 
     const sessionsMetaStore = useSessionsMetaStore();
 
@@ -101,6 +102,8 @@
 
     let renderedMediaCache: { [key: string]: [number, HTMLElement] } = {};
 
+    const ignoreChangeInSession = ref(false);
+
     watch(imageWidth, () => {
         clearRenderedMediaCache();
         selectPost(currentPostNumber.value);
@@ -108,14 +111,20 @@
     watch(
         selectedSession,
         () => {
-            clearRenderedMediaCache();
-            // reset display
-            resetDisplay();
+            if (!ignoreChangeInSession.value) {
+                clearRenderedMediaCache();
+                // reset display
+                resetDisplay();
+            } else {
+                console.log("Session changed, but ignored. No reloading");
+            }
         },
         {
-            deep: true,
+            deep: false, // this cleared the cache too often, if not intended
         }
     );
+
+    const selectedPost = ref(null as null | Post);
 
     async function selectPost(number: number) {
         if (number >= 0 && number < getNumberOfPosts()) {
@@ -133,8 +142,10 @@
         const json = getPostJson(number);
         if (json) {
             await displayPost(json);
+            selectedPost.value = json;
         } else {
             console.error("No post json found");
+            selectedPost.value = null;
         }
 
         // cache next posts asynchronously in the background
@@ -299,6 +310,28 @@
             return Object.keys(selectedSession.value.posts).length;
         }
     }
+
+    function getStars(post: Post): number {
+        return parseInt(getRating(post).stars);
+    }
+
+    async function handleRatingChange(newRating: number) {
+        if (selectedPost.value) {
+            // this is a minor change. We do NOT want to hard-reload the page.
+            // Otherwise we might get taken posts out from under our nose on rating change
+            ignoreChangeInSession.value = true;
+
+            getRating(selectedPost.value).stars = String(newRating);
+
+            nextTick(() => {
+                ignoreChangeInSession.value = false;
+            });
+
+            if (selectedSession.value) {
+                await sessionsMetaStore.storeSessionInFilesystem(selectedSession.value, scope);
+            }
+        }
+    }
 </script>
 
 <template>
@@ -329,6 +362,11 @@
     <input type="number" min="10" max="100" step="10" v-model="imageWidth" />
 
     <br />
+    <RatingVue
+        v-if="selectedPost && selectedSession"
+        :ratingStars="getStars(selectedPost)"
+        @new-rating-selected="handleRatingChange"
+    ></RatingVue>
     <br />
     <div style="width: 100%; text-align: center">
         <div style="width: 60%; margin: auto">

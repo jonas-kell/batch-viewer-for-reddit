@@ -7,6 +7,7 @@ import {
     deleteSession as deleteSessionOPFS,
     parseSessionsMetaFromFilesystem,
     includePostsFileInSessionAndUploadToOPFS,
+    storeSessionToOpfs,
 } from "./../functions/opfs";
 import toastr from "toastr";
 
@@ -62,6 +63,13 @@ export default defineStore("sessionsMeta", () => {
         await includePostsFileInSessionAndUploadToOPFS(file, session, scope);
     }
 
+    /**
+     *  DOES NOT RE-COMPUTE SESSIONS. MUST DO MANUALLY
+     */
+    async function storeSessionInFilesystem(session: MemorySession, scope: string) {
+        await storeSessionToOpfs(session, scope);
+    }
+
     function sessionSelectableCheck(sessionName: string, scope: string) {
         if (Object.keys(sessions.value[scope]).includes(sessionName)) {
             if (sessions.value[scope][sessionName].is_encrypted) {
@@ -103,5 +111,6 @@ export default defineStore("sessionsMeta", () => {
         getSessions,
         reParseLocalSessionCacheFromFiles,
         addFileToSession,
+        storeSessionInFilesystem,
     };
 });

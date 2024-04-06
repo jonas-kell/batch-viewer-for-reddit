@@ -14,7 +14,7 @@
 </script>
 
 <template>
-    <div style="width: 100%; text-align: center">
+    <div style="width: 100%; text-align: center" :key="ratingStars">
         <span
             v-for="i in 5"
             class="favourite_star"

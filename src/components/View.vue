@@ -55,11 +55,15 @@
     const randomnessSeed = ref((localStorage.getItem("randomnessSeedForDisplay") ?? String(Math.random())) as string);
 
     function reRandomize() {
-        randomnessSeed.value = String(Math.random());
-        localStorage.setItem("randomnessSeedForDisplay", randomnessSeed.value);
+        let confirmed = confirm("Do you really want to Re-Randomize?");
 
-        resetDisplay();
-        selectPost(0);
+        if (confirmed) {
+            randomnessSeed.value = String(Math.random());
+            localStorage.setItem("randomnessSeedForDisplay", randomnessSeed.value);
+
+            resetDisplay();
+            selectPost(0);
+        }
     }
 
     const randomnessMapping = computed((): string[] => {
@@ -361,6 +365,7 @@
     &nbsp&nbsp Image Width:
     <input type="number" min="10" max="100" step="10" v-model="imageWidth" />
 
+    <br />
     <br />
     <RatingVue
         v-if="selectedPost && selectedSession"

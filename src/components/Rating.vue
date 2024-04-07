@@ -32,8 +32,8 @@
         background-repeat: no-repeat;
         background-size: 80% 80%;
         background-position: center;
-        width: 1.5em;
-        height: 1.5em;
+        width: 2.5em;
+        height: 2.5em;
         cursor: pointer;
         display: inline-block;
     }

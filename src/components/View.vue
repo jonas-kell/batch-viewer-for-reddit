@@ -10,7 +10,7 @@
     import { v4 as uuid } from "uuid";
     import RatingVue from "./Rating.vue";
     import FilterVue from "./Filter.vue";
-    import { filteredPosts, defaultFilter, Filter } from "../functions/filter";
+    import { filteredPosts, Filter, getLastUsedFilter } from "../functions/filter";
 
     const sessionsMetaStore = useSessionsMetaStore();
 
@@ -301,7 +301,7 @@
         }
     }
 
-    const currentFilter = ref(defaultFilter);
+    const currentFilter = ref(getLastUsedFilter());
     const currentPosts = computed(() => {
         return filteredPosts(selectedSession.value?.posts ?? {}, currentFilter.value);
     });

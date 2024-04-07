@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, nextTick, onMounted, ref, watch } from "vue";
+    import { computed, onMounted, ref, toRaw, watch } from "vue";
     import PasswordField from "./PasswordField.vue";
     import useSessionsMetaStore from "./../stores/sessionsMeta";
     import SessionSelectButtons from "./SessionSelectButtons.vue";
@@ -22,7 +22,7 @@
 
     const scope = "page";
     onMounted(() => {
-        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+        reParseFromStorageToMemory();
 
         sessionStorage.setItem("listenerViewUUID", viewerUUID.value); // yes, vou COULD unregister them. I hate dealing with un-registering
 
@@ -48,6 +48,13 @@
             }
         });
     });
+
+    function reParseFromStorageToMemory() {
+        sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+
+        // dirty write cache now should be cleared
+        ratingOverwrites.value = {};
+    }
 
     const selectedSession = ref(null as MemorySession | null);
     function handleSessionSelected(session: MemorySession | null) {
@@ -93,7 +100,9 @@
 
     const imageWidth = ref(parseInt(localStorage.getItem("image-width") ?? "100"));
     const currentPostNumber = ref(0);
-    const maxPostNumber = ref(0);
+    const maxPostNumber = computed(() => {
+        return numberOfPosts.value - 1;
+    });
 
     watch(imageWidth, () => {
         localStorage.setItem("image-width", String(imageWidth.value));
@@ -108,8 +117,6 @@
 
     let renderedMediaCache: { [key: string]: [number, HTMLElement] } = {};
 
-    const ignoreChangeInSession = ref(false);
-
     watch(imageWidth, () => {
         clearRenderedMediaCache();
         selectPost(currentPostNumber.value);
@@ -117,12 +124,13 @@
     watch(
         selectedSession,
         () => {
-            if (!ignoreChangeInSession.value) {
-                clearRenderedMediaCache();
-                // reset display
-                resetDisplay();
-            } else {
-                console.log("Session changed, but ignored. No reloading");
+            clearRenderedMediaCache();
+            // reset display
+            resetDisplay();
+
+            if (postsRatingDirty.value) {
+                postsRatingDirty.value = false;
+                reParseFromStorageToMemory();
             }
         },
         {
@@ -291,9 +299,6 @@
     }
 
     function resetDisplay() {
-        // set max number display
-        maxPostNumber.value = numberOfPosts.value - 1;
-
         // get image files from zip and append to display
         if (selectedSession.value) {
             const postNumberToSelect = parseInt(localStorage.getItem(postNumberCacheKey(selectedSession.value)) ?? "0");
@@ -304,6 +309,22 @@
     const currentFilter = ref(getLastUsedFilter());
     const currentPosts = computed(() => {
         return filteredPosts(selectedSession.value?.posts ?? {}, currentFilter.value);
+    });
+    const ratingOverwrites = ref({} as { [key: string]: number });
+    const currentPostRatingStars = computed(() => {
+        if (selectedPost.value) {
+            const post = currentPosts.value[selectedPost.value.id];
+
+            if (post) {
+                if (Object.keys(ratingOverwrites.value).includes(post.id)) {
+                    return ratingOverwrites.value[post.id];
+                } else {
+                    return parseInt(getRating(post).stars);
+                }
+            }
+        }
+
+        return 0;
     });
 
     function getPostJson(index: number) {
@@ -322,24 +343,25 @@
         }
     });
 
-    function getStars(post: Post): number {
-        return parseInt(getRating(post).stars);
-    }
+    const postsRatingDirty = ref(false);
 
     async function handleRatingChange(newRating: number) {
         if (selectedPost.value) {
-            // this is a minor change. We do NOT want to hard-reload the page.
-            // Otherwise we might get taken posts out from under our nose on rating change
-            ignoreChangeInSession.value = true;
+            // write into overwrite to reflect in UI
+            ratingOverwrites.value[selectedPost.value.id] = newRating;
 
-            getRating(selectedPost.value).stars = String(newRating);
+            // store into memory without touching the current session
+            const sessionCopy = structuredClone(toRaw(selectedSession.value));
+            if (sessionCopy) {
+                Object.keys(ratingOverwrites.value).forEach((keyToOverwrittenPost) => {
+                    const post = sessionCopy.posts[keyToOverwrittenPost];
+                    if (post && post != null && post != undefined) {
+                        getRating(post).stars = String(ratingOverwrites.value[keyToOverwrittenPost]); // store to copy of session, because post object is referenced by copy of session
+                    }
+                });
 
-            nextTick(() => {
-                ignoreChangeInSession.value = false;
-            });
-
-            if (selectedSession.value) {
-                await sessionsMetaStore.storeSessionInFilesystem(selectedSession.value, scope);
+                await sessionsMetaStore.storeSessionInFilesystem(sessionCopy, scope);
+                postsRatingDirty.value = true;
             }
         }
     }
@@ -384,8 +406,9 @@
     <br />
     <RatingVue
         v-if="selectedPost && selectedSession"
-        :ratingStars="getStars(selectedPost)"
+        :ratingStars="currentPostRatingStars"
         @new-rating-selected="handleRatingChange"
+        :key="selectedPost.id"
     ></RatingVue>
     <br />
     <div style="width: 100%; text-align: center" class="unselectable">

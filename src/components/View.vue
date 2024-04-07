@@ -9,6 +9,8 @@
     import seedrandom from "seed-random";
     import { v4 as uuid } from "uuid";
     import RatingVue from "./Rating.vue";
+    import FilterVue from "./Filter.vue";
+    import { filteredPosts, defaultFilter, Filter } from "../functions/filter";
 
     const sessionsMetaStore = useSessionsMetaStore();
 
@@ -70,7 +72,7 @@
         const rng = seedrandom(randomnessSeed.value);
 
         if (selectedSession.value) {
-            let keyArray = Object.keys(selectedSession.value.posts);
+            let keyArray = Object.keys(currentPosts.value);
 
             const numSwaps = keyArray.length * 3; // TODO other number???
             for (let index = 0; index < numSwaps; index++) {
@@ -131,7 +133,7 @@
     const selectedPost = ref(null as null | Post);
 
     async function selectPost(number: number) {
-        if (number >= 0 && number < getNumberOfPosts()) {
+        if (number >= 0 && number < numberOfPosts.value) {
             // ok region
         } else {
             number = 0;
@@ -157,7 +159,7 @@
         const numberOfPostsToCache = 3;
         function cacheInBackground(postNr: number, offset: number) {
             setTimeout(() => {
-                renderPost(getPostJson((postNr + offset) % getNumberOfPosts()));
+                renderPost(getPostJson((postNr + offset) % numberOfPosts.value));
             }, timeDifference * offset);
         }
         for (let i = 1; i <= numberOfPostsToCache; i++) {
@@ -290,7 +292,7 @@
 
     function resetDisplay() {
         // set max number display
-        maxPostNumber.value = getNumberOfPosts() - 1;
+        maxPostNumber.value = numberOfPosts.value - 1;
 
         // get image files from zip and append to display
         if (selectedSession.value) {
@@ -299,21 +301,26 @@
         }
     }
 
+    const currentFilter = ref(defaultFilter);
+    const currentPosts = computed(() => {
+        return filteredPosts(selectedSession.value?.posts ?? {}, currentFilter.value);
+    });
+
     function getPostJson(index: number) {
-        if (selectedSession.value == null) {
+        if (numberOfPosts.value == 0) {
             return null;
         } else {
-            return selectedSession.value.posts[randomnessMapping.value[index]];
+            return currentPosts.value[randomnessMapping.value[index]];
         }
     }
 
-    function getNumberOfPosts() {
-        if (selectedSession.value == null) {
+    const numberOfPosts = computed(() => {
+        if (currentPosts.value == null) {
             return 0;
         } else {
-            return Object.keys(selectedSession.value.posts).length;
+            return Object.keys(currentPosts.value).length;
         }
-    }
+    });
 
     function getStars(post: Post): number {
         return parseInt(getRating(post).stars);
@@ -335,6 +342,12 @@
                 await sessionsMetaStore.storeSessionInFilesystem(selectedSession.value, scope);
             }
         }
+    }
+
+    function handleNewFilter(newFilter: Filter) {
+        currentFilter.value = newFilter;
+
+        resetDisplay();
     }
 </script>
 
@@ -364,6 +377,8 @@
     <button @click="reRandomize">SHUFFLE</button>
     &nbsp&nbsp Image Width:
     <input type="number" min="10" max="100" step="10" v-model="imageWidth" />
+
+    <FilterVue @new-filter="handleNewFilter" :hidden="!selectedSession"></FilterVue>
 
     <br />
     <br />

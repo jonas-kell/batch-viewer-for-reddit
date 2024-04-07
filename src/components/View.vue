@@ -212,18 +212,18 @@
         // generate media element
         if (mediaContents) {
             if (mediaContents.type.includes("video")) {
-                content = `<video ${style} autoplay muted controls loop><source src="${await blobToBase64(
+                content = `<video ${style} autoplay muted controls loop class="unselectable"><source src="${await blobToBase64(
                     mediaContents
                 )}">Your browser does not support the video tag.</video>`;
             } else {
                 // assume image mime type
-                content = `<img src="${await blobToBase64(mediaContents)}"  ${style}></img>`;
+                content = `<img src="${await blobToBase64(mediaContents)}"  ${style} class="unselectable"></img>`;
             }
         }
 
         // set html output
         const cacheElement = document.createElement("div");
-        cacheElement.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next"></div>`;
+        cacheElement.innerHTML = `<h4>${subreddit}</h4><h2>${title}</h2>${content}<h4>${author}</h4><span>${link}</span><div style="position: absolute; top:3em; bottom:6em; left: 0; right: 60%;" class="view_prev" class="unselectable"></div><div style="position: absolute; top:3em; bottom:6em; right: 0; left: 60%;" class="view_next" class="unselectable"></div>`;
 
         // append to dom
         let cacheRegion = document.getElementById("view_area_cache");
@@ -388,7 +388,7 @@
         @new-rating-selected="handleRatingChange"
     ></RatingVue>
     <br />
-    <div style="width: 100%; text-align: center">
+    <div style="width: 100%; text-align: center" class="unselectable">
         <div style="width: 60%; margin: auto">
             <input type="number" min="0" :max="maxPostNumber" step="1" style="width: 20%" v-model="currentPostNumber" /> /
             <span>{{ maxPostNumber }}</span>
@@ -399,10 +399,10 @@
     <br />
     <div style="width: 100%; text-align: center; min-height: 2cm; border: 2px solid black; position: relative">
         <div style="width: 98%; text-align: center; position: relative; margin: auto" id="view_target"></div>
-        <div style="visibility: hidden" hidden id="view_area_cache"></div>
+        <div style="visibility: hidden" hidden id="view_area_cache" class="unselectable"></div>
     </div>
     <br />
-    <div style="width: 100%; text-align: center">
+    <div style="width: 100%; text-align: center" class="unselectable">
         <div style="width: 60%; margin: auto">
             <input type="number" style="width: 20%" disabled v-model="currentPostNumber" /> /
             <span>{{ maxPostNumber }}</span>

@@ -1,5 +1,5 @@
 import { MemorySession, Post } from "./interfaces";
-import { downloadMediaAndGenerateZipFile } from "./zipFilesManagement";
+import { downloadMediaAndGenerateZipFile, processMediaAndGenerateZipFile } from "./zipFilesManagement";
 import toastr from "toastr";
 
 export interface DownloadSessionState {
@@ -50,13 +50,13 @@ export async function processPosts(
     session: MemorySession | null,
     downloadState: DownloadSessionState,
     proxyHost: string | null = null,
-    scope: string
+    scope: string,
 ): Promise<[Blob, number]> {
     const redditApiURL = generateRedditApiURL(downloadState);
 
     const jsonResponse: RedditApiResponse | null = (await requestMediaOrApiData(
         redditApiURL,
-        proxyHost
+        proxyHost,
     )) as RedditApiResponse | null; // cast should work here
 
     if (!jsonResponse) {
@@ -102,6 +102,40 @@ export async function processPosts(
 
     // download the images and zip them
     const zipBlobAndNumber = await downloadMediaAndGenerateZipFile(outputArray, proxyHost, scope);
+
+    return zipBlobAndNumber;
+}
+
+export async function processPostsManual(files: File[], session: MemorySession | null, scope: string): Promise<[Blob, number]> {
+    var outputArray: Post[] = [];
+    files.forEach((file, index) => {
+        const id = file.name;
+
+        let currentIds: string[] = [];
+        if (session != null) {
+            currentIds = Object.keys(session.posts);
+        }
+
+        // not include multiple times
+        if (!currentIds.includes(id)) {
+            outputArray.push({
+                id: id,
+                author: "Manually added",
+                direct_link: `https://example.com`,
+                title: "Manually added",
+                subreddit: "Manually added",
+                media_url: `https://example.com`,
+                series_index: String(index),
+                hash_filename: "",
+                iv_string: "",
+                mime_type: file.type,
+                zip_file_name: "",
+            });
+        }
+    });
+
+    // download the images and zip them
+    const zipBlobAndNumber = await processMediaAndGenerateZipFile(files, outputArray, scope);
 
     return zipBlobAndNumber;
 }

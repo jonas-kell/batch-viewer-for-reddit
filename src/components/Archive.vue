@@ -6,7 +6,7 @@
     import { MemorySession } from "../functions/interfaces";
     import { copyToClipboard, downloadBlob } from "../functions/interactBrowser";
     import toastr from "toastr";
-    import { DownloadSessionState, generateRedditApiURL, processPosts } from "../functions/archiveMedia";
+    import { DownloadSessionState, generateRedditApiURL, processPosts, processPostsManual } from "../functions/archiveMedia";
     import useProgressStore from "./../stores/progress";
     import { generateZipFileName } from "../functions/zipFilesManagement";
     import SessionInfo from "./SessionInfo.vue";
@@ -65,14 +65,14 @@
             if (startWithPost == "" || startWithPost.length == 6 || startWithPost.length == 7) {
                 toastr.info(
                     `URL for scraping subreddit "${downloadSessionState.value.subreddit_name}" for next set of posts` +
-                        (startWithPost ? ` after the post with the id ${startWithPost}` : "")
+                        (startWithPost ? ` after the post with the id ${startWithPost}` : ""),
                 );
 
                 const [content, numberOfFiles] = await processPosts(
                     selectedSession.value,
                     downloadSessionState.value,
                     proxyHostAddress.value,
-                    scope
+                    scope,
                 );
                 const filename = generateZipFileName(scope);
 
@@ -88,7 +88,7 @@
                         await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
 
                         toastr.info(
-                            "Stored " + filename + " successfully into the session data files of session: " + sessionName
+                            "Stored " + filename + " successfully into the session data files of session: " + sessionName,
                         );
                     }
                 } else {
@@ -110,6 +110,45 @@
                 clickOnNextProcess();
             }, 2000);
         }
+    }
+
+    const manualPostsAdder = ref(null);
+
+    async function addManualPostsAction() {
+        downloadRunning.value = true;
+        try {
+            if (!manualPostsAdder.value) {
+                toastr.error("No files to process");
+                downloadRunning.value = false;
+                return;
+            }
+
+            const files: File[] = Array.from((manualPostsAdder.value as any).files || []);
+
+            const [content, numberOfFiles] = await processPostsManual(files, selectedSession.value, scope);
+            const filename = generateZipFileName(scope);
+
+            if (numberOfFiles > 0) {
+                if (selectedSession.value == null) {
+                    downloadBlob(content, filename);
+                    toastr.info("Zip downloaded");
+                } else {
+                    (content as any).name = filename;
+                    const file = content as File;
+                    const sessionName = selectedSession.value.name; // gets unselected here ...
+                    await sessionsMetaStore.addFileToSession(selectedSession.value, file, scope);
+                    await sessionsMetaStore.reParseLocalSessionCacheFromFiles(scope);
+
+                    toastr.info("Stored " + filename + " successfully into the session data files of session: " + sessionName);
+                }
+            } else {
+                toastr.warning("Nothing has been successfully downloaded this setp. Skip archiving.");
+            }
+        } catch (error) {
+            console.error(error);
+            downloadRunning.value = false;
+        }
+        downloadRunning.value = false;
     }
 
     const proxyUrl = computed(() => {
@@ -176,7 +215,7 @@
         },
         {
             immediate: true,
-        }
+        },
     );
 
     const proxyFieldBackground = computed(() => {
@@ -259,8 +298,22 @@
             </span>
         </div>
 
+        <h2>Manual Adding</h2>
+
+        <input type="file" accept="image/*" multiple="true" ref="manualPostsAdder" />
         <br />
-        <br />
+        <button
+            :style="{
+                background: downloadRunning ? '' : 'green',
+            }"
+            :disabled="downloadRunning"
+            @click="addManualPostsAction"
+        >
+            Add selected to Archive
+        </button>
+
+        <h2>Target Settings</h2>
+
         <PasswordField
             scope="page"
             hint="Insert Encryption Key"
